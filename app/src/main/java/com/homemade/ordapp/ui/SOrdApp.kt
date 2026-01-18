@@ -17,6 +17,7 @@ import androidx.navigation.compose.composable
 import com.homemade.ordapp.Graph
 import com.homemade.ordapp.ui.home.Home
 import com.homemade.ordapp.ui.order.CreateOrder
+import com.homemade.ordapp.ui.order.OrderList
 import com.homemade.ordapp.ui.prepare.Prepare
 
 @RequiresApi(Build.VERSION_CODES.R)
@@ -42,7 +43,7 @@ fun SOrdApp (
         }
 
         composable(Screen.List.route) { backStackEntry ->
-            ListText()
+            OrderList(appState.navController, appState::navigateToOther)
         }
 
         composable(Screen.CreateOrder.route) { backStackEntry ->

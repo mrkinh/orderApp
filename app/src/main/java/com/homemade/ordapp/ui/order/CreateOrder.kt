@@ -1,15 +1,18 @@
 package com.homemade.ordapp.ui.order
 
 import android.os.Build
+import android.text.InputFilter
 import androidx.annotation.RequiresApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.calculateEndPadding
 import androidx.compose.foundation.layout.calculateStartPadding
 import androidx.compose.foundation.layout.fillMaxHeight
@@ -17,6 +20,8 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.lazy.LazyColumn
@@ -63,11 +68,15 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavHostController
 import com.homemade.ordapp.Graph
+import com.homemade.ordapp.data.room.entities.Order
+import com.homemade.ordapp.data.room.entities.OrderItem
 import com.homemade.ordapp.data.room.model.OrderWithItem
+import com.homemade.ordapp.ui.components.ConfirmDialog
 import com.homemade.ordapp.ui.components.Header
 import com.homemade.ordapp.ui.components.NavBar
 import com.homemade.ordapp.ui.theme.backgroundColor
 import com.homemade.ordapp.ui.theme.lineGrey
+import com.homemade.ordapp.utils.*
 import com.homemade.ordapp.utils.getMoonDate
 
 @RequiresApi(Build.VERSION_CODES.O)
@@ -108,6 +117,9 @@ fun Content(
     viewModel: OrderViewModel
 ) {
     val orderViewState by viewModel.state.collectAsStateWithLifecycle()
+    var openConfirmDialog = remember { mutableStateOf(false) }
+    var notificationText = remember { mutableStateOf("") }
+
     Column(
         verticalArrangement = Arrangement.spacedBy(10.dp),
         horizontalAlignment = Alignment.Start
@@ -115,8 +127,25 @@ fun Content(
         Header( true, "Nhận Đơn") {
             navigateToOther("home")
         }
-        NewOrderContent (viewModel) { newOrder ->
-
+        NewOrderContent (viewModel, orderViewState.creatingOrder) { ->
+            openConfirmDialog.value = true
+        }
+        ConfirmDialog(openDialog = openConfirmDialog.value,
+            title = "Nhận Đơn",
+            height = 300,
+            onDismissRequest= {
+                openConfirmDialog.value = false
+            },
+            onConfirmRequest = {
+                if (!viewModel.isCreatingOrderValid()) {
+                    notificationText.value = "Thông tin khách hàng không đầy đủ"
+                } else {
+                    viewModel.addNewOder()
+                    openConfirmDialog.value = false
+                }
+            }
+        ) {
+            OrderConfirmContent(orderViewState.creatingOrder)
         }
     }
 }
@@ -125,16 +154,12 @@ fun Content(
 @Composable
 fun NewOrderContent(
     viewModel: OrderViewModel,
-    onNewOrder: (OrderWithItem) -> Unit
+    creatingOrder: OrderWithItem,
+    onNewOrder: () -> Unit
 ) {
     val keyboardController = LocalSoftwareKeyboardController.current
     val focusRequester = remember { FocusRequester() }
-    var userName by remember { mutableStateOf(TextFieldValue("", selection = TextRange(0))) }
-    var userPhone by remember { mutableStateOf(TextFieldValue("", selection = TextRange(0))) }
-    var pickupDate by remember { mutableStateOf("16/02/2026") }
     var pickupDateExpanded = remember { mutableStateOf(false) }
-    var userDeposit by remember { mutableStateOf(TextFieldValue("", selection = TextRange(0))) }
-    var userNote by remember { mutableStateOf(TextFieldValue("", selection = TextRange(0))) }
 
     Text(
         text = "Thông Tin Khách Hàng",
@@ -178,9 +203,10 @@ fun NewOrderContent(
             )
         }
         BasicTextField(
-            value = userName,
+            value = creatingOrder.order.customerName,
             onValueChange = {
-                userName = it
+                val order = creatingOrder.order.copy(customerName = it)
+                viewModel.updateOrderInfo(order)
             },
             textStyle = TextStyle(fontSize = 25.sp, color = Color.Black),
             singleLine = true,
@@ -201,7 +227,7 @@ fun NewOrderContent(
                 .focusRequester(focusRequester),
         ) { innerTextField ->
             TextFieldDefaults.DecorationBox(
-                value = userName.text,
+                value = creatingOrder.order.customerName,
                 innerTextField = {
                     innerTextField()
                 },
@@ -248,14 +274,15 @@ fun NewOrderContent(
             )
         }
         BasicTextField(
-            value = userPhone,
+            value = creatingOrder.order.customerPhone,
             onValueChange = {
-                userPhone = it
+                val order = creatingOrder.order.copy(customerPhone = it)
+                viewModel.updateOrderInfo(order)
             },
             textStyle = TextStyle(fontSize = 25.sp, color = Color.Black),
             singleLine = true,
             keyboardOptions = KeyboardOptions(
-                keyboardType = KeyboardType.Email,
+                keyboardType = KeyboardType.Number,
                 imeAction = ImeAction.Done
             ),
             keyboardActions = KeyboardActions(
@@ -271,7 +298,7 @@ fun NewOrderContent(
                 .focusRequester(focusRequester),
         ) { innerTextField ->
             TextFieldDefaults.DecorationBox(
-                value = userPhone.text,
+                value = creatingOrder.order.customerPhone,
                 innerTextField = {
                     innerTextField()
                 },
@@ -328,7 +355,7 @@ fun NewOrderContent(
                 }
         ) {
             Text(
-                text = pickupDate + "-" + getMoonDate(pickupDate) + "AL",
+                text = creatingOrder.order.pickupTime + "-" + getMoonDate(creatingOrder.order.pickupTime) + "AL",
                 fontSize = 25.sp,
                 textAlign = TextAlign.Left,
                 lineHeight = 30.sp,
@@ -345,7 +372,9 @@ fun NewOrderContent(
             }
         ) { selectedDate ->
             pickupDateExpanded.value = false
-            pickupDate = viewModel.getDateList()[selectedDate]
+            var pickupDate = viewModel.getDateList()[selectedDate]
+            val order = creatingOrder.order.copy(pickupTime = pickupDate)
+            viewModel.updateOrderInfo(order)
         }
 
         // Deposit area
@@ -373,14 +402,15 @@ fun NewOrderContent(
             )
         }
         BasicTextField(
-            value = userDeposit,
+            value = creatingOrder.order.depositMoney,
             onValueChange = {
-                userDeposit = it
+                val order = creatingOrder.order.copy(depositMoney = it)
+                viewModel.updateOrderInfo(order)
             },
             textStyle = TextStyle(fontSize = 25.sp, color = Color.Black),
             singleLine = true,
             keyboardOptions = KeyboardOptions(
-                keyboardType = KeyboardType.Email,
+                keyboardType = KeyboardType.Number,
                 imeAction = ImeAction.Done
             ),
             keyboardActions = KeyboardActions(
@@ -396,7 +426,7 @@ fun NewOrderContent(
                 .focusRequester(focusRequester),
         ) { innerTextField ->
             TextFieldDefaults.DecorationBox(
-                value = userDeposit.text,
+                value = creatingOrder.order.depositMoney,
                 innerTextField = {
                     innerTextField()
                 },
@@ -432,15 +462,7 @@ fun NewOrderContent(
     )
 
     // Detail Order
-    Column(
-        modifier = Modifier.fillMaxWidth()
-            .wrapContentHeight()
-            .padding(top = 20.dp)
-            .background(Color.White)
-    ) {
-
-    }
-
+    DetailOrder(viewModel, creatingOrder)
 
     // Note
     Text(
@@ -452,12 +474,13 @@ fun NewOrderContent(
         color = Color.Black,
         overflow = TextOverflow.Ellipsis,
         fontWeight = FontWeight.Bold,
-        modifier = Modifier.padding(start = 50.dp, top= 20.dp)
+        modifier = Modifier.padding(start = 50.dp, top= 5.dp)
     )
     BasicTextField(
-        value = userNote,
+        value = creatingOrder.order.description,
         onValueChange = {
-            userNote = it
+            val order = creatingOrder.order.copy(description = it)
+            viewModel.updateOrderInfo(order)
         },
         minLines = 3,
         maxLines = 10,
@@ -479,7 +502,7 @@ fun NewOrderContent(
             .focusRequester(focusRequester),
     ) { innerTextField ->
         TextFieldDefaults.DecorationBox(
-            value = userNote.text,
+            value = creatingOrder.order.description,
             innerTextField = {
                 innerTextField()
             },
@@ -499,6 +522,29 @@ fun NewOrderContent(
             ),
             shape = RoundedCornerShape(8.dp),
         )
+    }
+
+    Row(
+        horizontalArrangement = Arrangement.Center,
+        modifier = Modifier.fillMaxSize()
+    ) {
+        Box(
+            contentAlignment = Alignment.Center,
+            modifier = Modifier
+                .clip(RoundedCornerShape(4.dp))
+                .background(Color(0xFF75B974))
+                .width(200.dp)
+                .height(70.dp)
+                .clickable(onClick = {
+                    onNewOrder()
+                })
+        ) {
+            Text(
+                text = "Lưu",
+                fontSize = 25.sp,
+                color = Color(0xFF004F36),
+            )
+        }
     }
 }
 
@@ -546,4 +592,672 @@ fun DateList(
             }
         }
     }
+}
+
+@RequiresApi(Build.VERSION_CODES.O)
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun DetailOrder(
+    viewModel: OrderViewModel,
+    creatingOrder: OrderWithItem,
+) {
+    val keyboardController = LocalSoftwareKeyboardController.current
+    val focusRequester = remember { FocusRequester() }
+
+    Column(
+        modifier = Modifier.fillMaxWidth()
+            .wrapContentHeight()
+            .padding(top = 5.dp)
+            .background(Color.White)
+    ) {
+        // Pork Large
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            modifier = Modifier.fillMaxWidth()
+                .wrapContentHeight()
+        ) {
+            Text(
+                text = "Giò (Loại 1kg)",
+                fontSize = 22.sp,
+                textAlign = TextAlign.Left,
+                lineHeight = 30.sp,
+                maxLines = 1,
+                color = Color.Black,
+                overflow = TextOverflow.Ellipsis,
+                modifier = Modifier.fillMaxWidth(0.5F)
+                    .padding(start = 50.dp)
+            )
+
+            BasicTextField(
+                value = getQuantityByItemName(creatingOrder,ITEM_PORK_SAUSAGE_LARGE),
+                onValueChange = {
+                    val quantity = it.toIntOrNull() ?: 0
+                    var orderItem = OrderItem (itemName = ITEM_PORK_SAUSAGE_LARGE, quantity = quantity)
+                    viewModel.addOrUpdateItem(orderItem)
+                },
+                textStyle = TextStyle(fontSize = 25.sp, color = Color.Black),
+                singleLine = true,
+                keyboardOptions = KeyboardOptions(
+                    keyboardType = KeyboardType.Number,
+                    imeAction = ImeAction.Done
+                ),
+                keyboardActions = KeyboardActions(
+                    onDone = { keyboardController?.hide() }
+                ),
+                modifier = Modifier
+                    .width(55.dp)
+                    .height(55.dp)
+                    .border(
+                        width = 1.dp,
+                        color = Color(0x33C4C4C4),
+                        shape = RoundedCornerShape(4.dp)
+                    )
+                    .clip(RoundedCornerShape(4.dp))
+                    .background(Color.White)
+                    .focusRequester(focusRequester),
+            ) { innerTextField ->
+                TextFieldDefaults.DecorationBox(
+                    value = getQuantityByItemName(creatingOrder,ITEM_PORK_SAUSAGE_LARGE),
+                    innerTextField = {
+                        innerTextField()
+                    },
+                    enabled = true,
+                    singleLine = true,
+                    placeholder = {
+                        Text("0", color = Color.Black, fontSize = 25.sp)
+                    },
+                    visualTransformation = VisualTransformation.None,
+                    interactionSource = remember { MutableInteractionSource() },
+                    contentPadding = PaddingValues(start = 10.dp),
+                    colors = TextFieldDefaults.colors(
+                        unfocusedContainerColor = Color.White,
+                        focusedContainerColor = Color.White,
+                        focusedIndicatorColor = Color.Transparent,
+                        unfocusedIndicatorColor = Color.Transparent
+                    ),
+                    shape = RoundedCornerShape(8.dp),
+                )
+            }
+            Text(
+                text = "Cái",
+                fontSize = 22.sp,
+                textAlign = TextAlign.Left,
+                lineHeight = 30.sp,
+                maxLines = 1,
+                color = Color.Black,
+                overflow = TextOverflow.Ellipsis,
+                modifier = Modifier.fillMaxWidth()
+                    .padding(start = 15.dp)
+            )
+        }
+
+        // Pork Small
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            modifier = Modifier.fillMaxWidth()
+                .wrapContentHeight()
+        ) {
+            Text(
+                text = "Giò (Loại 0.5kg)",
+                fontSize = 22.sp,
+                textAlign = TextAlign.Left,
+                lineHeight = 30.sp,
+                maxLines = 1,
+                color = Color.Black,
+                overflow = TextOverflow.Ellipsis,
+                modifier = Modifier.fillMaxWidth(0.5F)
+                    .padding(start = 50.dp)
+            )
+
+            BasicTextField(
+                value = getQuantityByItemName(creatingOrder,ITEM_PORK_SAUSAGE),
+                onValueChange = {
+                    val quantity = it.toIntOrNull() ?: 0
+                    var orderItem = OrderItem (itemName = ITEM_PORK_SAUSAGE, quantity = quantity)
+                    viewModel.addOrUpdateItem(orderItem)
+                },
+                textStyle = TextStyle(fontSize = 25.sp, color = Color.Black),
+                singleLine = true,
+                keyboardOptions = KeyboardOptions(
+                    keyboardType = KeyboardType.Number,
+                    imeAction = ImeAction.Done
+                ),
+                keyboardActions = KeyboardActions(
+                    onDone = { keyboardController?.hide() }
+                ),
+                modifier = Modifier
+                    .width(55.dp)
+                    .height(55.dp)
+                    .border(
+                        width = 1.dp,
+                        color = Color(0x33C4C4C4),
+                        shape = RoundedCornerShape(4.dp)
+                    )
+                    .clip(RoundedCornerShape(4.dp))
+                    .background(Color.White)
+                    .focusRequester(focusRequester),
+            ) { innerTextField ->
+                TextFieldDefaults.DecorationBox(
+                    value = getQuantityByItemName(creatingOrder,ITEM_PORK_SAUSAGE),
+                    innerTextField = {
+                        innerTextField()
+                    },
+                    enabled = true,
+                    singleLine = true,
+                    placeholder = {
+                        Text("0", color = Color.Black, fontSize = 25.sp)
+                    },
+                    visualTransformation = VisualTransformation.None,
+                    interactionSource = remember { MutableInteractionSource() },
+                    contentPadding = PaddingValues(start = 10.dp),
+                    colors = TextFieldDefaults.colors(
+                        unfocusedContainerColor = Color.White,
+                        focusedContainerColor = Color.White,
+                        focusedIndicatorColor = Color.Transparent,
+                        unfocusedIndicatorColor = Color.Transparent
+                    ),
+                    shape = RoundedCornerShape(8.dp),
+                )
+            }
+            Text(
+                text = "Cái",
+                fontSize = 22.sp,
+                textAlign = TextAlign.Left,
+                lineHeight = 30.sp,
+                maxLines = 1,
+                color = Color.Black,
+                overflow = TextOverflow.Ellipsis,
+                modifier = Modifier.fillMaxWidth()
+                    .padding(start = 15.dp)
+            )
+        }
+
+        // Pork Dry
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            modifier = Modifier.fillMaxWidth()
+                .wrapContentHeight()
+        ) {
+            Text(
+                text = "Chả Chiên",
+                fontSize = 22.sp,
+                textAlign = TextAlign.Left,
+                lineHeight = 30.sp,
+                maxLines = 1,
+                color = Color.Black,
+                overflow = TextOverflow.Ellipsis,
+                modifier = Modifier.fillMaxWidth(0.5F)
+                    .padding(start = 50.dp)
+            )
+
+            BasicTextField(
+                value = getQuantityByItemName(creatingOrder,ITEM_PORK_SAUSAGE_FRY),
+                onValueChange = {
+                    val quantity = it.toIntOrNull() ?: 0
+                    var orderItem = OrderItem (itemName = ITEM_PORK_SAUSAGE_FRY, quantity = quantity)
+                    viewModel.addOrUpdateItem(orderItem)
+                },
+                textStyle = TextStyle(fontSize = 25.sp, color = Color.Black),
+                singleLine = true,
+                keyboardOptions = KeyboardOptions(
+                    keyboardType = KeyboardType.Number,
+                    imeAction = ImeAction.Done
+                ),
+                keyboardActions = KeyboardActions(
+                    onDone = { keyboardController?.hide() }
+                ),
+                modifier = Modifier
+                    .width(55.dp)
+                    .height(55.dp)
+                    .border(
+                        width = 1.dp,
+                        color = Color(0x33C4C4C4),
+                        shape = RoundedCornerShape(4.dp)
+                    )
+                    .clip(RoundedCornerShape(4.dp))
+                    .background(Color.White)
+                    .focusRequester(focusRequester),
+            ) { innerTextField ->
+                TextFieldDefaults.DecorationBox(
+                    value = getQuantityByItemName(creatingOrder,ITEM_PORK_SAUSAGE_FRY),
+                    innerTextField = {
+                        innerTextField()
+                    },
+                    enabled = true,
+                    singleLine = true,
+                    placeholder = {
+                        Text("0", color = Color.Black, fontSize = 25.sp)
+                    },
+                    visualTransformation = VisualTransformation.None,
+                    interactionSource = remember { MutableInteractionSource() },
+                    contentPadding = PaddingValues(start = 10.dp),
+                    colors = TextFieldDefaults.colors(
+                        unfocusedContainerColor = Color.White,
+                        focusedContainerColor = Color.White,
+                        focusedIndicatorColor = Color.Transparent,
+                        unfocusedIndicatorColor = Color.Transparent
+                    ),
+                    shape = RoundedCornerShape(8.dp),
+                )
+            }
+            Text(
+                text = "Kg",
+                fontSize = 22.sp,
+                textAlign = TextAlign.Left,
+                lineHeight = 30.sp,
+                maxLines = 1,
+                color = Color.Black,
+                overflow = TextOverflow.Ellipsis,
+                modifier = Modifier.fillMaxWidth()
+                    .padding(start = 15.dp)
+            )
+        }
+
+        // Cake Large
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            modifier = Modifier.fillMaxWidth()
+                .wrapContentHeight()
+        ) {
+            Text(
+                text = "Bánh Chưng (To)",
+                fontSize = 22.sp,
+                textAlign = TextAlign.Left,
+                lineHeight = 30.sp,
+                maxLines = 1,
+                color = Color.Black,
+                overflow = TextOverflow.Ellipsis,
+                modifier = Modifier.fillMaxWidth(0.5F)
+                    .padding(start = 50.dp)
+            )
+
+            BasicTextField(
+                value = getQuantityByItemName(creatingOrder,ITEM_CHUNG_CAKE_LARGE),
+                onValueChange = {
+                    val quantity = it.toIntOrNull() ?: 0
+                    var orderItem = OrderItem (itemName = ITEM_CHUNG_CAKE_LARGE, quantity = quantity)
+                    viewModel.addOrUpdateItem(orderItem)
+                },
+                textStyle = TextStyle(fontSize = 25.sp, color = Color.Black),
+                singleLine = true,
+                keyboardOptions = KeyboardOptions(
+                    keyboardType = KeyboardType.Number,
+                    imeAction = ImeAction.Done
+                ),
+                keyboardActions = KeyboardActions(
+                    onDone = { keyboardController?.hide() }
+                ),
+                modifier = Modifier
+                    .width(55.dp)
+                    .height(55.dp)
+                    .border(
+                        width = 1.dp,
+                        color = Color(0x33C4C4C4),
+                        shape = RoundedCornerShape(4.dp)
+                    )
+                    .clip(RoundedCornerShape(4.dp))
+                    .background(Color.White)
+                    .focusRequester(focusRequester),
+            ) { innerTextField ->
+                TextFieldDefaults.DecorationBox(
+                    value = getQuantityByItemName(creatingOrder,ITEM_CHUNG_CAKE_LARGE),
+                    innerTextField = {
+                        innerTextField()
+                    },
+                    enabled = true,
+                    singleLine = true,
+                    placeholder = {
+                        Text("0", color = Color.Black, fontSize = 25.sp)
+                    },
+                    visualTransformation = VisualTransformation.None,
+                    interactionSource = remember { MutableInteractionSource() },
+                    contentPadding = PaddingValues(start = 10.dp),
+                    colors = TextFieldDefaults.colors(
+                        unfocusedContainerColor = Color.White,
+                        focusedContainerColor = Color.White,
+                        focusedIndicatorColor = Color.Transparent,
+                        unfocusedIndicatorColor = Color.Transparent
+                    ),
+                    shape = RoundedCornerShape(8.dp),
+                )
+            }
+            Text(
+                text = "Cái",
+                fontSize = 22.sp,
+                textAlign = TextAlign.Left,
+                lineHeight = 30.sp,
+                maxLines = 1,
+                color = Color.Black,
+                overflow = TextOverflow.Ellipsis,
+                modifier = Modifier.fillMaxWidth()
+                    .padding(start = 15.dp)
+            )
+        }
+
+        // Cake Normal
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            modifier = Modifier.fillMaxWidth()
+                .wrapContentHeight()
+        ) {
+            Text(
+                text = "Bánh Chưng (Vừa)",
+                fontSize = 22.sp,
+                textAlign = TextAlign.Left,
+                lineHeight = 30.sp,
+                maxLines = 1,
+                color = Color.Black,
+                overflow = TextOverflow.Ellipsis,
+                modifier = Modifier.fillMaxWidth(0.5F)
+                    .padding(start = 50.dp)
+            )
+            BasicTextField(
+                value = getQuantityByItemName(creatingOrder,ITEM_CHUNG_CAKE_NORMAL),
+                onValueChange = {
+                    val quantity = it.toIntOrNull() ?: 0
+                    var orderItem = OrderItem (itemName = ITEM_CHUNG_CAKE_NORMAL, quantity = quantity)
+                    viewModel.addOrUpdateItem(orderItem)
+                },
+                textStyle = TextStyle(fontSize = 25.sp, color = Color.Black),
+                singleLine = true,
+                keyboardOptions = KeyboardOptions(
+                    keyboardType = KeyboardType.Number,
+                    imeAction = ImeAction.Done
+                ),
+                keyboardActions = KeyboardActions(
+                    onDone = { keyboardController?.hide() }
+                ),
+                modifier = Modifier
+                    .width(55.dp)
+                    .height(55.dp)
+                    .border(
+                        width = 1.dp,
+                        color = Color(0x33C4C4C4),
+                        shape = RoundedCornerShape(4.dp)
+                    )
+                    .clip(RoundedCornerShape(4.dp))
+                    .background(Color.White)
+                    .focusRequester(focusRequester),
+            ) { innerTextField ->
+                TextFieldDefaults.DecorationBox(
+                    value = getQuantityByItemName(creatingOrder,ITEM_CHUNG_CAKE_LARGE),
+                    innerTextField = {
+                        innerTextField()
+                    },
+                    enabled = true,
+                    singleLine = true,
+                    placeholder = {
+                        Text("0", color = Color.Black, fontSize = 25.sp)
+                    },
+                    visualTransformation = VisualTransformation.None,
+                    interactionSource = remember { MutableInteractionSource() },
+                    contentPadding = PaddingValues(start = 10.dp),
+                    colors = TextFieldDefaults.colors(
+                        unfocusedContainerColor = Color.White,
+                        focusedContainerColor = Color.White,
+                        focusedIndicatorColor = Color.Transparent,
+                        unfocusedIndicatorColor = Color.Transparent
+                    ),
+                    shape = RoundedCornerShape(8.dp),
+                )
+            }
+            Text(
+                text = "Cái",
+                fontSize = 22.sp,
+                textAlign = TextAlign.Left,
+                lineHeight = 30.sp,
+                maxLines = 1,
+                color = Color.Black,
+                overflow = TextOverflow.Ellipsis,
+                modifier = Modifier.fillMaxWidth()
+                    .padding(start = 15.dp)
+            )
+        }
+
+        // Cake Small
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            modifier = Modifier.fillMaxWidth()
+                .wrapContentHeight()
+        ) {
+            Text(
+                text = "Bánh Chưng (Nhỏ)",
+                fontSize = 22.sp,
+                textAlign = TextAlign.Left,
+                lineHeight = 30.sp,
+                maxLines = 1,
+                color = Color.Black,
+                overflow = TextOverflow.Ellipsis,
+                modifier = Modifier.fillMaxWidth(0.5F)
+                    .padding(start = 50.dp)
+            )
+
+            BasicTextField(
+                value = getQuantityByItemName(creatingOrder,ITEM_CHUNG_CAKE_SMALL),
+                onValueChange = {
+                    val quantity = it.toIntOrNull() ?: 0
+                    var orderItem = OrderItem (itemName = ITEM_CHUNG_CAKE_SMALL, quantity = quantity)
+                    viewModel.addOrUpdateItem(orderItem)
+                },
+                textStyle = TextStyle(fontSize = 25.sp, color = Color.Black),
+                singleLine = true,
+                keyboardOptions = KeyboardOptions(
+                    keyboardType = KeyboardType.Number,
+                    imeAction = ImeAction.Done
+                ),
+                keyboardActions = KeyboardActions(
+                    onDone = { keyboardController?.hide() }
+                ),
+                modifier = Modifier
+                    .width(55.dp)
+                    .height(55.dp)
+                    .border(
+                        width = 1.dp,
+                        color = Color(0x33C4C4C4),
+                        shape = RoundedCornerShape(4.dp)
+                    )
+                    .clip(RoundedCornerShape(4.dp))
+                    .background(Color.White)
+                    .focusRequester(focusRequester),
+            ) { innerTextField ->
+                TextFieldDefaults.DecorationBox(
+                    value = getQuantityByItemName(creatingOrder,ITEM_CHUNG_CAKE_SMALL),
+                    innerTextField = {
+                        innerTextField()
+                    },
+                    enabled = true,
+                    singleLine = true,
+                    placeholder = {
+                        Text("0", color = Color.Black, fontSize = 25.sp)
+                    },
+                    visualTransformation = VisualTransformation.None,
+                    interactionSource = remember { MutableInteractionSource() },
+                    contentPadding = PaddingValues(start = 10.dp),
+                    colors = TextFieldDefaults.colors(
+                        unfocusedContainerColor = Color.White,
+                        focusedContainerColor = Color.White,
+                        focusedIndicatorColor = Color.Transparent,
+                        unfocusedIndicatorColor = Color.Transparent
+                    ),
+                    shape = RoundedCornerShape(8.dp),
+                )
+            }
+            Text(
+                text = "Cái",
+                fontSize = 22.sp,
+                textAlign = TextAlign.Left,
+                lineHeight = 30.sp,
+                maxLines = 1,
+                color = Color.Black,
+                overflow = TextOverflow.Ellipsis,
+                modifier = Modifier.fillMaxWidth()
+                    .padding(start = 15.dp)
+            )
+        }
+    }
+}
+@RequiresApi(Build.VERSION_CODES.O)
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun OrderConfirmContent(
+    data: OrderWithItem,
+) {
+    Column(
+        modifier = Modifier.fillMaxWidth()
+            .wrapContentHeight()
+            .padding(top = 5.dp)
+            .background(Color.White)
+    ) {
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            modifier = Modifier.fillMaxWidth()
+                .wrapContentHeight()
+        ) {
+            Text(
+                text = "Tên",
+                fontSize = 22.sp,
+                textAlign = TextAlign.Left,
+                lineHeight = 30.sp,
+                maxLines = 1,
+                color = Color.Black,
+                overflow = TextOverflow.Ellipsis,
+                modifier = Modifier.fillMaxWidth(0.5F)
+                    .padding(start = 50.dp)
+            )
+            Text(
+                text = data.order.customerName,
+                fontSize = 22.sp,
+                textAlign = TextAlign.Left,
+                lineHeight = 30.sp,
+                maxLines = 1,
+                color = Color.Black,
+                overflow = TextOverflow.Ellipsis,
+                modifier = Modifier.fillMaxWidth()
+                    .padding(start = 50.dp)
+            )
+        }
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            modifier = Modifier.fillMaxWidth()
+                .wrapContentHeight()
+        ) {
+            Text(
+                text = "Số Điện Thoại",
+                fontSize = 22.sp,
+                textAlign = TextAlign.Left,
+                lineHeight = 30.sp,
+                maxLines = 1,
+                color = Color.Black,
+                overflow = TextOverflow.Ellipsis,
+                modifier = Modifier.fillMaxWidth(0.5F)
+                    .padding(start = 50.dp)
+            )
+            Text(
+                text = data.order.customerPhone,
+                fontSize = 22.sp,
+                textAlign = TextAlign.Left,
+                lineHeight = 30.sp,
+                maxLines = 1,
+                color = Color.Black,
+                overflow = TextOverflow.Ellipsis,
+                modifier = Modifier.fillMaxWidth()
+                    .padding(start = 50.dp)
+            )
+        }
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            modifier = Modifier.fillMaxWidth()
+                .wrapContentHeight()
+        ) {
+            Text(
+                text = "Ngày Lấy",
+                fontSize = 22.sp,
+                textAlign = TextAlign.Left,
+                lineHeight = 30.sp,
+                maxLines = 1,
+                color = Color.Black,
+                overflow = TextOverflow.Ellipsis,
+                modifier = Modifier.fillMaxWidth(0.5F)
+                    .padding(start = 50.dp)
+            )
+            Text(
+                text = data.order.pickupTime +  "-" + getMoonDate(data.order.pickupTime) + "AL",
+                fontSize = 22.sp,
+                textAlign = TextAlign.Left,
+                lineHeight = 30.sp,
+                maxLines = 1,
+                color = Color.Black,
+                overflow = TextOverflow.Ellipsis,
+                modifier = Modifier.fillMaxWidth()
+                    .padding(start = 50.dp)
+            )
+        }
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            modifier = Modifier.fillMaxWidth()
+                .wrapContentHeight()
+        ) {
+            Text(
+                text = "Tiền Cọc",
+                fontSize = 22.sp,
+                textAlign = TextAlign.Left,
+                lineHeight = 30.sp,
+                maxLines = 1,
+                color = Color.Black,
+                overflow = TextOverflow.Ellipsis,
+                modifier = Modifier.fillMaxWidth(0.5F)
+                    .padding(start = 50.dp)
+            )
+            Text(
+                text = data.order.depositMoney +  "K",
+                fontSize = 22.sp,
+                textAlign = TextAlign.Left,
+                lineHeight = 30.sp,
+                maxLines = 1,
+                color = Color.Black,
+                overflow = TextOverflow.Ellipsis,
+                modifier = Modifier.fillMaxWidth()
+                    .padding(start = 50.dp)
+            )
+        }
+        data.items.forEachIndexed { index, detailItem ->
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                modifier = Modifier.fillMaxWidth()
+                    .wrapContentHeight()
+            ) {
+                Text(
+                    text = getReadableItemName(detailItem.itemName),
+                    fontSize = 22.sp,
+                    textAlign = TextAlign.Left,
+                    lineHeight = 30.sp,
+                    maxLines = 1,
+                    color = Color.Black,
+                    overflow = TextOverflow.Ellipsis,
+                    modifier = Modifier.fillMaxWidth(0.5F)
+                        .padding(start = 50.dp)
+                )
+                Text(
+                    text = detailItem.quantity.toString() + " " + getQuantityTypeName(detailItem.itemName),
+                    fontSize = 20.sp,
+                    textAlign = TextAlign.Left,
+                    lineHeight = 30.sp,
+                    maxLines = 1,
+                    color = Color.Black,
+                    overflow = TextOverflow.Ellipsis,
+                    modifier = Modifier.fillMaxWidth()
+                        .padding(start = 50.dp)
+                )
+            }
+        }
+    }
+}
+fun getQuantityByItemName(order: OrderWithItem, itemName: String): String {
+    val itemsList = order.items
+    itemsList.map { item ->
+        if (item.itemName == itemName) {
+            return item.quantity.toString()
+        }
+    }
+    return "0"
 }

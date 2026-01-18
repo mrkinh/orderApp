@@ -17,7 +17,7 @@ import androidx.room.ForeignKey
 )
 data class OrderItem(
     @PrimaryKey(autoGenerate = true) val itemId: Long = 0,
-    val parentOrderId: Long,
+    val parentOrderId: Long = 0,
     val itemName: String,
     val quantity: Int
 )

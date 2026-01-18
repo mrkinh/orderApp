@@ -31,7 +31,7 @@ interface OrderDAO  {
     }
 
     @Transaction
-    @Query("SELECT * FROM orders ORDER BY pickupTime ASC")
+    @Query("SELECT * FROM orders ORDER BY orderTime DESC")
     fun getAllOrdersWithItems(): Flow<List<OrderWithItem>>
 
     @Transaction
