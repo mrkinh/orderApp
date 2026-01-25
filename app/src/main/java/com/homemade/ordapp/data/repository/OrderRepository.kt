@@ -18,4 +18,8 @@ class OrderRepository (private val orderDAO: OrderDAO) {
     suspend fun createFullOrder(order: Order, items: List<OrderItem>) {
         return orderDAO.createFullOrder(order, items)
     }
+
+    suspend fun updateOrderStatus(orderId: Long, status: String) {
+        return orderDAO.updateOrderStatus(orderId, status)
+    }
 }

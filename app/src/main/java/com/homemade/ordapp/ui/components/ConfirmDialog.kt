@@ -33,14 +33,13 @@ import com.homemade.ordapp.ui.theme.textColorSecondary
 fun ConfirmDialog(
     openDialog: Boolean,
     title: String,
-    height: Int,
     onDismissRequest: () -> Unit,
     onConfirmRequest: () -> Unit,
     content: @Composable () -> Unit,
 ) {
     when {
         openDialog -> {
-            ConfirmDialogContent(title, height, onDismissRequest, onConfirmRequest, content)
+            ConfirmDialogContent(title, onDismissRequest, onConfirmRequest, content)
         }
     }
 }
@@ -48,7 +47,6 @@ fun ConfirmDialog(
 @Composable
 fun ConfirmDialogContent(
     title: String,
-    height: Int,
     onDismissRequest: () -> Unit,
     onConfirmRequest: () -> Unit,
     content: @Composable () -> Unit,

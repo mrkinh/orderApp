@@ -89,7 +89,7 @@ fun Content(
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         Header(navigateToOther, viewModel)
-        DataContent(navigateToOther, "Số Lượng Cần Giao", 0x4CFF0000,homeViewState.warehouseList)
+        DataContent(navigateToOther, "Số Lượng Cần Giao", 0x4CFF0000,homeViewState.orderList)
         DataContent(navigateToOther, "Số Lượng Thực Tế", 0x4C9747FF,homeViewState.warehouseList)
         DataContent(navigateToOther, "Số Lượng Đã Giao", 0x4CE4CA8A, homeViewState.deliveredList)
     }
@@ -111,7 +111,7 @@ fun Header(
         Column (
             verticalArrangement = Arrangement.Center,
             modifier = Modifier
-                .fillMaxWidth(0.8F)
+                .fillMaxWidth(0.7F)
                 .padding(20.dp)
                 .fillMaxHeight()
         ) {
@@ -127,7 +127,7 @@ fun Header(
                 fontWeight = FontWeight.Bold,
             )
             Text(
-                text = "Âm Lịch: ${getCurrentMoonDate()}",
+                text = "Âm Lịch: ${getMoonDate(getCurrentDate())}",
                 fontSize = 25.sp,
                 textAlign = TextAlign.Left,
                 lineHeight = 30.sp,
@@ -392,7 +392,7 @@ fun DataContent(
                     .wrapContentHeight()
             ) {
                 Text(
-                    text = "Lớn",
+                    text = "Số Lượng",
                     fontSize = 20.sp,
                     lineHeight = 30.sp,
                     fontStyle = FontStyle.Normal,
@@ -402,7 +402,7 @@ fun DataContent(
                 )
 
                 Text(
-                    text = "${getQuantity(ITEM_PORK_SAUSAGE_FRY_LARGE, data)} cái",
+                    text = "${getQuantity(ITEM_PORK_SAUSAGE_FRY, data)} Kg",
                     fontSize = 20.sp,
                     lineHeight = 30.sp,
                     fontStyle = FontStyle.Normal,
@@ -411,34 +411,7 @@ fun DataContent(
                     modifier = Modifier.padding(start = 30.dp)
                 )
             }
-            Row(
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically,
-                modifier = Modifier
-                    .padding(start = 20.dp, end = 20.dp, top = 10.dp, bottom = 20.dp)
-                    .fillMaxWidth()
-                    .wrapContentHeight()
-            ) {
-                Text(
-                    text = "Nhỏ",
-                    fontSize = 20.sp,
-                    lineHeight = 30.sp,
-                    fontStyle = FontStyle.Normal,
-                    fontWeight = FontWeight.Normal,
-                    color = Color.Black,
-                    modifier = Modifier.padding(start = 30.dp)
-                )
-
-                Text(
-                    text = "${getQuantity(ITEM_PORK_SAUSAGE_FRY, data)} cái",
-                    fontSize = 20.sp,
-                    lineHeight = 30.sp,
-                    fontStyle = FontStyle.Normal,
-                    fontWeight = FontWeight.Normal,
-                    color = Color.Black,
-                    modifier = Modifier.padding(start = 30.dp)
-                )
-            }
+            Spacer(modifier = Modifier.height(15.dp))
         }
     }
 }

@@ -128,11 +128,11 @@ fun Content(
             navigateToOther("home")
         }
         NewOrderContent (viewModel, orderViewState.creatingOrder) { ->
+            notificationText.value = ""
             openConfirmDialog.value = true
         }
         ConfirmDialog(openDialog = openConfirmDialog.value,
             title = "Nhận Đơn",
-            height = 300,
             onDismissRequest= {
                 openConfirmDialog.value = false
             },
@@ -142,10 +142,12 @@ fun Content(
                 } else {
                     viewModel.addNewOder()
                     openConfirmDialog.value = false
+                    notificationText.value = ""
+                    navigateToOther("Home")
                 }
             }
         ) {
-            OrderConfirmContent(orderViewState.creatingOrder)
+            OrderConfirmContent(notificationText.value,orderViewState.creatingOrder)
         }
     }
 }
@@ -1100,6 +1102,7 @@ fun DetailOrder(
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun OrderConfirmContent(
+    errorMessage: String,
     data: OrderWithItem,
 ) {
     Column(
@@ -1108,6 +1111,19 @@ fun OrderConfirmContent(
             .padding(top = 5.dp)
             .background(Color.White)
     ) {
+        if (!errorMessage.isEmpty()) {
+            Text(
+                text = errorMessage,
+                fontSize = 22.sp,
+                textAlign = TextAlign.Left,
+                lineHeight = 30.sp,
+                maxLines = 1,
+                color = Color.Red,
+                overflow = TextOverflow.Ellipsis,
+                modifier = Modifier.fillMaxWidth()
+                    .padding(start = 50.dp)
+            )
+        }
         Row(
             verticalAlignment = Alignment.CenterVertically,
             modifier = Modifier.fillMaxWidth()

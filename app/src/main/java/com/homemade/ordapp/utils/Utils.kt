@@ -2,11 +2,14 @@ package com.homemade.ordapp.utils
 
 import android.os.Build
 import androidx.annotation.RequiresApi
-import com.homemade.ordapp.ui.home.formatTimestamp
 import java.time.Instant
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 import java.util.Locale
+
+val validDate = setOf(
+    "10/02/2026", "11/02/2026", "12/02/2026", "13/02/2026", "14/02/2026", "15/02/2026", "16/02/2026"
+)
 
 @RequiresApi(Build.VERSION_CODES.O)
 fun formatFullTimestamp(timestamp: Long): String {
@@ -22,6 +25,21 @@ fun formatFullTimestamp(timestamp: Long): String {
 @RequiresApi(Build.VERSION_CODES.O)
 fun getCurrentDateTime(): String {
     return formatFullTimestamp(System.currentTimeMillis())
+}
+
+@RequiresApi(Build.VERSION_CODES.O)
+fun formatTimestamp(timestamp: Long): String {
+    val formatter = DateTimeFormatter.ofPattern("dd/MM/yyyy", Locale.getDefault())
+    val date = Instant.ofEpochMilli(timestamp)
+        .atZone(ZoneId.systemDefault())
+        .toLocalDate()
+    return date.format(formatter)
+}
+
+@RequiresApi(Build.VERSION_CODES.O)
+fun getCurrentDate(): String {
+    val date = formatTimestamp(System.currentTimeMillis())
+    return if (date in validDate) date else "17/02/2026"
 }
 
 @RequiresApi(Build.VERSION_CODES.O)

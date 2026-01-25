@@ -9,6 +9,7 @@ import com.homemade.ordapp.data.repository.WarehouseRepository
 import com.homemade.ordapp.data.room.OrdAppDatabase
 import com.homemade.ordapp.ui.home.HomeViewModel
 import com.homemade.ordapp.ui.order.OrderViewModel
+import com.homemade.ordapp.ui.statistic.StatisticViewModel
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
 
@@ -16,6 +17,8 @@ object Graph {
     lateinit var database: OrdAppDatabase
     lateinit var homeVM: HomeViewModel
     lateinit var orderVM: OrderViewModel
+    lateinit var statisticVM: StatisticViewModel
+
     var screenWidthDp: Int = 0
     var screenHeightDp: Int = 0
     private val TAG="Graph"
@@ -45,5 +48,6 @@ object Graph {
 
         homeVM = HomeViewModel()
         orderVM = OrderViewModel()
+        statisticVM = StatisticViewModel()
     }
 }
