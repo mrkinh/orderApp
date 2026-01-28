@@ -9,19 +9,6 @@ import java.time.format.DateTimeFormatter
 import java.util.Locale
 
 // Helper functions
-@RequiresApi(Build.VERSION_CODES.O)
-fun formatTimestamp(timestamp: Long): String {
-    val formatter = DateTimeFormatter.ofPattern("dd/MM/yyyy", Locale.getDefault())
-    val date = Instant.ofEpochMilli(timestamp)
-        .atZone(ZoneId.systemDefault())
-        .toLocalDate()
-    return date.format(formatter)
-}
-
-@RequiresApi(Build.VERSION_CODES.O)
-fun getCurrentDate(): String {
-    return formatTimestamp(System.currentTimeMillis())
-}
 
 fun getIndexInList(itemName: String): Int {
     return when(itemName) {

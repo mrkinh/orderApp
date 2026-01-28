@@ -17,7 +17,9 @@ import androidx.navigation.compose.composable
 import com.homemade.ordapp.Graph
 import com.homemade.ordapp.ui.home.Home
 import com.homemade.ordapp.ui.order.CreateOrder
+import com.homemade.ordapp.ui.order.OrderList
 import com.homemade.ordapp.ui.prepare.Prepare
+import com.homemade.ordapp.ui.statistic.Statistic
 
 @RequiresApi(Build.VERSION_CODES.R)
 @Composable
@@ -34,6 +36,7 @@ fun SOrdApp (
         startDestination =  startScreen
     ) {
         composable(Screen.Home.route) { backStackEntry ->
+            Graph.homeVM.refresh()
             Home(appState.navController, appState::navigateToOther)
         }
 
@@ -42,7 +45,8 @@ fun SOrdApp (
         }
 
         composable(Screen.List.route) { backStackEntry ->
-            ListText()
+            Graph.orderVM.refresh()
+            OrderList(appState.navController, appState::navigateToOther)
         }
 
         composable(Screen.CreateOrder.route) { backStackEntry ->
@@ -50,17 +54,8 @@ fun SOrdApp (
         }
 
         composable(Screen.Statistic.route) { backStackEntry ->
-            StatisticText()
+            Graph.statisticVM.refresh()
+            Statistic(appState.navController, appState::navigateToOther)
         }
     }
-}
-
-@Composable
-fun ListText() {
-    Text(text = "This is LIST screen")
-}
-
-@Composable
-fun StatisticText() {
-    Text(text = "This is LIST screen")
 }
