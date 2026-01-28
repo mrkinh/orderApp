@@ -143,16 +143,9 @@ fun Content(
         viewState: PrepareViewModel.PrepareViewState,
         viewModel: PrepareViewModel
     ) {
-        var showDateList by remember { mutableStateOf(false) }
         var pickupDateExpanded = remember { mutableStateOf(false) }
         var pickupDate by remember { mutableStateOf("16/02/2026") }
         var showDialog by remember { mutableStateOf(false) }
-        var quantityCakeLarge by remember { mutableStateOf(0) }
-        var quantityCakeNormal by remember { mutableStateOf(0) }
-        var quantityCakeSmall by remember { mutableStateOf(0) }
-        var quantityPorkSaurageL by remember { mutableStateOf(0) }
-        var quantityPorkSaurageM by remember { mutableStateOf(0) }
-        var quantityPorkSaurageFry by remember { mutableStateOf(0) }
 
         Box(
             contentAlignment = Alignment.Center,
@@ -169,7 +162,7 @@ fun Content(
                         horizontalArrangement = Arrangement.SpaceBetween,
                         verticalAlignment = Alignment.CenterVertically,
                         modifier = Modifier
-                            .fillMaxWidth(0.4F)
+                            .fillMaxWidth(0.5F)
                             .wrapContentHeight()
                             .border(width = 1.dp, color = Color(0xFF9747FF), shape = RoundedCornerShape(4.dp))
                             .background(color = Color(0x199747FF))
@@ -205,8 +198,7 @@ fun Content(
                         }
                     ) { selectedDate ->
                         pickupDateExpanded.value = false
-                        pickupDate = viewModel.getDateList()[selectedDate]
-                        viewModel.updateCreatingItemDate(pickupDate)
+                        viewModel.updateCreatingItemDate(viewModel.getDateList()[selectedDate])
                     }
                 }
 
