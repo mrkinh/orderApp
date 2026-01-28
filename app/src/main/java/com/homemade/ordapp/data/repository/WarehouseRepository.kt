@@ -12,4 +12,8 @@ class WarehouseRepository (private val warehouseDAO: WarehouseDAO) {
     fun getByDate(date: String): Flow<List<Warehouse>> {
         return warehouseDAO.getByDate(date)
     }
+
+    suspend fun createOrUpdate(warehouse: Warehouse) {
+        warehouseDAO.insert(warehouse)
+    }
 }

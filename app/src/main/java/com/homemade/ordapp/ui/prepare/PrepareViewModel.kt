@@ -14,16 +14,29 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import androidx.compose.runtime.*
+import com.homemade.ordapp.data.repository.WarehouseRepository
+import com.homemade.ordapp.data.room.entities.Warehouse
+import com.homemade.ordapp.data.room.model.WarehouseItem
 
 @RequiresApi(Build.VERSION_CODES.O)
 class PrepareViewModel(
-    private val orderRepository: OrderRepository = Graph.orderRepository,
+    private val warehouseRepository: WarehouseRepository = Graph.warehouseRepository,
 ): ViewModel() {
     companion object {
         private const val TAG = "class PrepareViewModel(\n"
     }
     private val _state = MutableStateFlow(
         PrepareViewState(
+            creatingItem = Warehouse(
+                date = "17/02/2026",
+                item1 = WarehouseItem(name = ITEM_CHUNG_CAKE_LARGE, quantity = 0),
+                item2 = WarehouseItem(name = ITEM_CHUNG_CAKE_NORMAL, quantity = 0),
+                item3 = WarehouseItem(name = ITEM_CHUNG_CAKE_SMALL, quantity = 0),
+                item4 = WarehouseItem(name = ITEM_PORK_SAUSAGE_LARGE, quantity = 0),
+                item5 = WarehouseItem(name = ITEM_PORK_SAUSAGE, quantity = 0),
+                item6 = WarehouseItem(name = ITEM_PORK_SAUSAGE_FRY_LARGE, quantity = 0),
+                item7 = WarehouseItem(name = ITEM_PORK_SAUSAGE_FRY, quantity = 0)
+            )
         )
     )
     val state: StateFlow<PrepareViewState>
@@ -32,7 +45,6 @@ class PrepareViewModel(
     init {
         refresh()
     }
-
 
     @RequiresApi(Build.VERSION_CODES.O)
     fun refresh() {
@@ -54,10 +66,49 @@ class PrepareViewModel(
             "14/02/2026",
             "15/02/2026",
             "16/02/2026",
+            "17/02/2026",
         )
     }
+
+    fun updateCreatingItemDate(date: String) {
+        _state.update { it.copy(creatingItem = it.creatingItem.copy(date = date)) }
+    }
+
+    fun updateCreatingItem(name: String, quantity: Int) {
+        _state.update { currentState ->
+            val item = WarehouseItem(name, quantity)
+            val updatedWarehouse = when (name) {
+                currentState.creatingItem.item1.name -> currentState.creatingItem.copy(item1 = item)
+                currentState.creatingItem.item2.name -> currentState.creatingItem.copy(item2 = item)
+                currentState.creatingItem.item3.name -> currentState.creatingItem.copy(item3 = item)
+                currentState.creatingItem.item4.name -> currentState.creatingItem.copy(item4 = item)
+                currentState.creatingItem.item5.name -> currentState.creatingItem.copy(item5 = item)
+                currentState.creatingItem.item6.name -> currentState.creatingItem.copy(item6 = item)
+                currentState.creatingItem.item7.name -> currentState.creatingItem.copy(item7 = item)
+                else -> currentState.creatingItem
+            }
+            currentState.copy(creatingItem = updatedWarehouse)
+        }
+    }
+
+    fun updateItem() {
+        _state.update { it.copy(refreshing = true) }
+        viewModelScope.launch(Graph.ioDispatcher) {
+            warehouseRepository.createOrUpdate(_state.value.creatingItem)
+            _state.update { it.copy(refreshing = false, creatingItem = Warehouse(
+                date = "17/02/2026",
+                item1 = WarehouseItem(name = ITEM_CHUNG_CAKE_LARGE, quantity = 0),
+                item2 = WarehouseItem(name = ITEM_CHUNG_CAKE_NORMAL, quantity = 0),
+                item3 = WarehouseItem(name = ITEM_CHUNG_CAKE_SMALL, quantity = 0),
+                item4 = WarehouseItem(name = ITEM_PORK_SAUSAGE_LARGE, quantity = 0),
+                item5 = WarehouseItem(name = ITEM_PORK_SAUSAGE, quantity = 0),
+                item6 = WarehouseItem(name = ITEM_PORK_SAUSAGE_FRY_LARGE, quantity = 0),
+                item7 = WarehouseItem(name = ITEM_PORK_SAUSAGE_FRY, quantity = 0))) }
+        }
+    }
+
     data class PrepareViewState(
+        val creatingItem: Warehouse,
         val refreshing: Boolean = false,
     )
-
 }

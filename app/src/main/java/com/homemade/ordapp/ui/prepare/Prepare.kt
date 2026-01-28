@@ -85,7 +85,9 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.text.style.TextOverflow
+import com.homemade.ordapp.data.room.entities.Warehouse
 import com.homemade.ordapp.ui.order.DateList
+import com.homemade.ordapp.utils.*
 
 
 @RequiresApi(Build.VERSION_CODES.O)
@@ -123,16 +125,14 @@ fun Content(
     navigateToOther: (String) -> Unit,
     viewModel: PrepareViewModel
 ) {
-    val orderViewState by viewModel.state.collectAsStateWithLifecycle()
+    val prepareViewState by viewModel.state.collectAsStateWithLifecycle()
     Column(
         verticalArrangement = Arrangement.spacedBy(10.dp),
         horizontalAlignment = Alignment.Start
     ) {
         Header(false, "Chuẩn Bị Hàng"){
         }
-        PrepareContent(navigateToOther, viewModel)
-
-
+        PrepareContent(navigateToOther, prepareViewState, viewModel)
     }
 }
 @OptIn(ExperimentalMaterial3Api::class)
@@ -140,22 +140,20 @@ fun Content(
     @Composable
     fun PrepareContent(
         navigateToOther: (String) -> Unit,
+        viewState: PrepareViewModel.PrepareViewState,
         viewModel: PrepareViewModel
-
     ) {
         var showDateList by remember { mutableStateOf(false) }
         var pickupDateExpanded = remember { mutableStateOf(false) }
         var pickupDate by remember { mutableStateOf("16/02/2026") }
         var showDialog by remember { mutableStateOf(false) }
-        val keyboardController = LocalSoftwareKeyboardController.current
-        var note by remember { mutableStateOf("") }
         var quantityCakeLarge by remember { mutableStateOf(0) }
+        var quantityCakeNormal by remember { mutableStateOf(0) }
         var quantityCakeSmall by remember { mutableStateOf(0) }
         var quantityPorkSaurageL by remember { mutableStateOf(0) }
         var quantityPorkSaurageM by remember { mutableStateOf(0) }
         var quantityPorkSaurageFry by remember { mutableStateOf(0) }
 
-        val focusRequester = remember { FocusRequester() }
         Box(
             contentAlignment = Alignment.Center,
             modifier = Modifier
@@ -171,20 +169,17 @@ fun Content(
                         horizontalArrangement = Arrangement.SpaceBetween,
                         verticalAlignment = Alignment.CenterVertically,
                         modifier = Modifier
-                            .fillMaxWidth()
+                            .fillMaxWidth(0.4F)
                             .wrapContentHeight()
-                            .border(
-                                width = 1.dp,
-                                color = Color(0x33C4C4C4),
-                                shape = RoundedCornerShape(4.dp)
-                            )
+                            .border(width = 1.dp, color = Color(0xFF9747FF), shape = RoundedCornerShape(4.dp))
+                            .background(color = Color(0x199747FF))
                             .clickable {
                                 pickupDateExpanded.value = !pickupDateExpanded.value
                             }
                             .padding(10.dp)
                     ) {
                         Text(
-                            text = pickupDate + "-" + getMoonDate(pickupDate) + "AL",
+                            text = viewState.creatingItem.date + "-" + getMoonDate(viewState.creatingItem.date) + "AL",
                             fontSize = 25.sp,
                             textAlign = TextAlign.Left,
                             lineHeight = 30.sp,
@@ -211,6 +206,7 @@ fun Content(
                     ) { selectedDate ->
                         pickupDateExpanded.value = false
                         pickupDate = viewModel.getDateList()[selectedDate]
+                        viewModel.updateCreatingItemDate(pickupDate)
                     }
                 }
 
@@ -257,8 +253,10 @@ fun Content(
                                 horizontalArrangement = Arrangement.spacedBy(5.dp),
                                 verticalAlignment = Alignment.CenterVertically,
                             ) {
-                                InputQuantityField{
-                                    quantityCakeLarge = it
+                                InputQuantityField(
+                                    getQuantityByName(viewState.creatingItem, ITEM_CHUNG_CAKE_LARGE)
+                                ) { quantity ->
+                                    viewModel.updateCreatingItem(ITEM_CHUNG_CAKE_LARGE, quantity)
                                 }
                                 Text(
                                     text = "Cái",
@@ -268,7 +266,38 @@ fun Content(
                                     color = Color.Black,
                                 )
                             }
+                        }
+                        Row(
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically,
+                            modifier = Modifier
+                                .fillMaxWidth()
 
+                        ) {
+                            Text(
+                                text = "Vừa",
+                                fontSize = 18.sp,
+                                fontStyle = FontStyle.Normal,
+                                fontWeight = FontWeight.Normal,
+                                color = Color.Black,
+                            )
+                            Row(
+                                horizontalArrangement = Arrangement.spacedBy(5.dp),
+                                verticalAlignment = Alignment.CenterVertically,
+                            ) {
+                                InputQuantityField (
+                                    getQuantityByName(viewState.creatingItem, ITEM_CHUNG_CAKE_NORMAL)
+                                ) { quantity ->
+                                    viewModel.updateCreatingItem(ITEM_CHUNG_CAKE_NORMAL, quantity)
+                                }
+                                Text(
+                                    text = "Cái",
+                                    fontSize = 18.sp,
+                                    fontStyle = FontStyle.Normal,
+                                    fontWeight = FontWeight.Normal,
+                                    color = Color.Black,
+                                )
+                            }
                         }
                         Row(
                             horizontalArrangement = Arrangement.SpaceBetween,
@@ -288,8 +317,10 @@ fun Content(
                                 horizontalArrangement = Arrangement.spacedBy(5.dp),
                                 verticalAlignment = Alignment.CenterVertically,
                             ) {
-                                InputQuantityField{
-                                    quantityCakeSmall = it
+                                InputQuantityField (
+                                    getQuantityByName(viewState.creatingItem, ITEM_CHUNG_CAKE_SMALL)
+                                ) { quantity ->
+                                    viewModel.updateCreatingItem(ITEM_CHUNG_CAKE_SMALL, quantity)
                                 }
                                 Text(
                                     text = "Cái",
@@ -319,7 +350,7 @@ fun Content(
 
                         ) {
                             Text(
-                                text = "1 Kg",
+                                text = "Lớn (1 Kg)",
                                 fontSize = 18.sp,
                                 fontStyle = FontStyle.Normal,
                                 fontWeight = FontWeight.Normal,
@@ -329,8 +360,10 @@ fun Content(
                                 horizontalArrangement = Arrangement.spacedBy(5.dp),
                                 verticalAlignment = Alignment.CenterVertically,
                             ) {
-                                InputQuantityField{
-                                    quantityPorkSaurageL = it
+                                InputQuantityField (
+                                    getQuantityByName(viewState.creatingItem, ITEM_PORK_SAUSAGE_LARGE)
+                                ) { quantity ->
+                                    viewModel.updateCreatingItem(ITEM_PORK_SAUSAGE_LARGE, quantity)
                                 }
                                 Text(
                                     text = "Cái",
@@ -350,7 +383,7 @@ fun Content(
 
                         ) {
                             Text(
-                                text = "0.5 Kg",
+                                text = "Nhỏ (0.5 Kg)",
                                 fontSize = 18.sp,
                                 fontStyle = FontStyle.Normal,
                                 fontWeight = FontWeight.Normal,
@@ -360,8 +393,10 @@ fun Content(
                                 horizontalArrangement = Arrangement.spacedBy(5.dp),
                                 verticalAlignment = Alignment.CenterVertically,
                             ) {
-                                InputQuantityField{
-                                    quantityPorkSaurageM = it
+                                InputQuantityField (
+                                    getQuantityByName(viewState.creatingItem, ITEM_PORK_SAUSAGE)
+                                ) { quantity ->
+                                    viewModel.updateCreatingItem(ITEM_PORK_SAUSAGE, quantity)
                                 }
                                 Text(
                                     text = "Cái",
@@ -391,7 +426,7 @@ fun Content(
 
                         ) {
                             Text(
-                                text = "0.5 Kg",
+                                text = "Số Lượng",
                                 fontSize = 18.sp,
                                 fontStyle = FontStyle.Normal,
                                 fontWeight = FontWeight.Normal,
@@ -401,11 +436,13 @@ fun Content(
                                 horizontalArrangement = Arrangement.spacedBy(5.dp),
                                 verticalAlignment = Alignment.CenterVertically,
                             ) {
-                                InputQuantityField{
-                                    quantityPorkSaurageFry = it
+                                InputQuantityField (
+                                    getQuantityByName(viewState.creatingItem, ITEM_PORK_SAUSAGE_FRY)
+                                ) { quantity ->
+                                    viewModel.updateCreatingItem(ITEM_PORK_SAUSAGE_FRY, quantity)
                                 }
                                 Text(
-                                    text = "Cái",
+                                    text = "Kg",
                                     fontSize = 18.sp,
                                     fontStyle = FontStyle.Normal,
                                     fontWeight = FontWeight.Normal,
@@ -414,21 +451,6 @@ fun Content(
                             }
                         }
                     }
-//                    Column(
-//                        verticalArrangement = Arrangement.spacedBy(5.dp),
-//                    ) {
-//                        Text(
-//                            text = "Ghi Chú",
-//                            fontSize = 18.sp,
-//                            fontStyle = FontStyle.Italic,
-//                            fontWeight = FontWeight.Bold,
-//                        )
-//                        NoteContentField{
-//                            note = it
-//                        }
-//
-//                    }
-
 
                     //Dialog area
                     Box(
@@ -453,15 +475,14 @@ fun Content(
                     }
                     if (showDialog) {
                         UpdateQuantityDialog (
-                            quantityCakeLarge = quantityCakeLarge,
-                            quantityCakeSmall = quantityCakeSmall,
-                            quantityPorkSaurageL = quantityPorkSaurageL,
-                            quantityPorkSaurageM = quantityPorkSaurageM,
-                            quantityPorkSaurageFry,
-                            note = note,
-                            onDismiss = { showDialog = false }
-
-                        )
+                            viewState,
+                            onDismiss = {
+                                showDialog = false
+                            }
+                        ) {
+                            viewModel.updateItem()
+                            showDialog = false
+                        }
                     }
                 }
             }
@@ -469,17 +490,11 @@ fun Content(
     }
 
 
-
-//Dialog Area
 @Composable
 fun UpdateQuantityDialog(
-    quantityCakeLarge: Int,
-    quantityCakeSmall: Int,
-    quantityPorkSaurageL: Int,
-    quantityPorkSaurageM: Int,
-    quantityPorkSausageFry: Int,
-    note: String,
-    onDismiss: () -> Unit
+    viewState: PrepareViewModel.PrepareViewState,
+    onDismiss: () -> Unit,
+    onConfirm: () -> Unit,
 ) {
     Dialog(onDismissRequest = onDismiss) {
         Box(
@@ -488,7 +503,7 @@ fun UpdateQuantityDialog(
                 .clip(RoundedCornerShape(20.dp))
                 .background(Color.White)
                 .padding(20.dp)
-        ){
+        ) {
             Column(
                 verticalArrangement = Arrangement.spacedBy(10.dp)
             ) {
@@ -496,122 +511,117 @@ fun UpdateQuantityDialog(
                     text = "Xác Nhận Số Lượng",
                     fontSize = 20.sp,
                     fontWeight = FontWeight.Bold
-                    )
-            Column(
-                verticalArrangement = Arrangement.spacedBy(10.dp)
+                )
+                Column(
+                    verticalArrangement = Arrangement.spacedBy(10.dp)
+                ) {
+                    Row(
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                    ) {
+                        Text(
+                            text = "#Bánh Chưng (Lớn)"
+                        )
+                        Text(
+                            text = "${getQuantityByName(viewState.creatingItem, ITEM_CHUNG_CAKE_LARGE)} Cái"
+                        )
+                    }
+                    Row(
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                    ) {
+                        Text(
+                            text = "#Bánh Chưng (Vừa)"
+                        )
+                        Text(
+                            text = "${getQuantityByName(viewState.creatingItem, ITEM_CHUNG_CAKE_NORMAL)} Cái"
+                        )
+                    }
+                    Row(
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                    ) {
+                        Text(
+                            text = "#Bánh Chưng (Nhỏ)"
+                        )
+                        Text(
+                            text = "${getQuantityByName(viewState.creatingItem, ITEM_CHUNG_CAKE_SMALL)} Cái"
+                        )
+                    }
+                    Row(
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                    ) {
+                        Text(
+                            text = "#Chả Lụa (1 Kg)"
+                        )
+                        Text(
+                            text = "${getQuantityByName(viewState.creatingItem, ITEM_PORK_SAUSAGE_LARGE)} Cái"
+                        )
+                    }
+                    Row(
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                    ) {
+                        Text(
+                            text = "#Chả Lụa(0.5 Kg)"
+                        )
+                        Text(
+                            text = "${getQuantityByName(viewState.creatingItem, ITEM_PORK_SAUSAGE)} Cái"
+                        )
+                    }
+                    Row(
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                    ) {
+                        Text(
+                            text = "#Chả Chiên"
+                        )
+                        Text(
+                            text = "${getQuantityByName(viewState.creatingItem, ITEM_PORK_SAUSAGE_FRY)} Cái"
+                        )
+                    }
 
-            ) {
-                Row(
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                ) {
-                    Text(
-                        text = "#Bánh Chưng (Lớn)"
-                    )
-                    Text(
-                        text = "$quantityCakeLarge Cái"
-                    )
                 }
-                Row(
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                ) {
-                    Text(
-                        text = "#Bánh Chưng (Nhỏ)"
-                    )
-                    Text(
-                        text = "$quantityCakeSmall Cái"
-                    )
-                }
-                Row(
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                ) {
-                    Text(
-                        text = "#Chả Lụa (1 Kg)"
-                    )
-                    Text(
-                        text = "$quantityPorkSaurageL Cái"
-                    )
-                }
-                Row(
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                ) {
-                    Text(
-                        text = "#Chả Lụa(0.5 Kg)"
-                    )
-                    Text(
-                        text = "$quantityPorkSaurageM Cái"
-                    )
-                }
-                Row(
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                ) {
-                    Text(
-                        text = "#Chả Chiên"
-                    )
-                    Text(
-                        text = "$quantityPorkSausageFry Cái"
-                    )
-                }
-//                Column(
-//                    verticalArrangement = Arrangement.SpaceBetween,
-//                    modifier = Modifier
-//                        .fillMaxWidth()
-//                ) {
-//                    Text(
-//                        text = "Ghi Chú",
-//                        fontWeight = FontWeight.Bold,
-//                        fontSize = 21.sp
-//                    )
-//                    Text(
-//                        text = "$note"
-//                    )
-//                }
-            }
                 Row(
                     modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.End
+                    horizontalArrangement = Arrangement.Center
                 ) {
-                    TextButton(onClick = onDismiss) {
+                    TextButton( modifier = Modifier.fillMaxWidth(0.5F),
+                        onClick = onDismiss) {
                         Text("Huỷ")
                     }
-                    TextButton(onClick = onDismiss) {
+                    TextButton( modifier = Modifier.fillMaxWidth(),
+                        onClick = onConfirm) {
                         Text(
                             "OK",
                             color = Color(0xFF75B974)
                         )
                     }
                 }
-
             }
         }
     }
 }
 
-
-
-//Input Field
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun InputQuantityField(
+    value: Int,
     onQuantityChange: (Int) -> Unit
 ) {
     val keyboardController = LocalSoftwareKeyboardController.current
-    var quantityText by remember { mutableStateOf("") }
     val focusRequester = remember { FocusRequester() }
 
     BasicTextField(
-        value = quantityText,
+        value = value.toString(),
         onValueChange = {
-            quantityText = it
             onQuantityChange(it.toIntOrNull() ?: 0)
         },
         textStyle = TextStyle(fontSize = 25.sp, color = Color.Black),
@@ -633,7 +643,7 @@ fun InputQuantityField(
             .padding(horizontal = 10.dp)
     ) { innerTextField ->
         TextFieldDefaults.DecorationBox(
-            value = quantityText,
+            value = value.toString(),
             innerTextField = innerTextField,
             enabled = true,
             singleLine = true,
@@ -651,65 +661,15 @@ fun InputQuantityField(
     }
 }
 
-
-
-//NoteField
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-fun NoteContentField(
-    onNoteChange: (String) -> Unit
-){
-    var contentText by remember { mutableStateOf(TextFieldValue("", selection = TextRange(0))) }
-    BasicTextField(
-        value = contentText,
-        onValueChange = {
-            contentText = it
-            onNoteChange(it.text)
-        },
-        textStyle = TextStyle(
-            fontSize = 21.sp,
-            color = Color.Black
-        ),
-        maxLines = Int.MAX_VALUE,
-        keyboardOptions = KeyboardOptions(
-            imeAction = ImeAction.Default
-        ),
-        modifier = Modifier
-            .fillMaxWidth()
-            .heightIn(min = 100.dp)
-            .border(
-                width = 1.dp,
-                color = Color(0x33C4C4C4),
-                shape = RoundedCornerShape(4.dp)
-            )
-            .clip(RoundedCornerShape(4.dp))
-            .background(Color.White)
-    ) { innerTextField ->
-        TextFieldDefaults.DecorationBox(
-            value = contentText.text,
-            innerTextField = {
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(10.dp),
-                    contentAlignment = Alignment.TopStart
-                ) {
-                    innerTextField()
-                }
-            },
-            enabled = true,
-            singleLine = false,
-            visualTransformation = VisualTransformation.None,
-            interactionSource = remember { MutableInteractionSource() },
-            contentPadding = PaddingValues(0.dp),
-            colors = TextFieldDefaults.colors(
-                unfocusedContainerColor = Color.White,
-                focusedContainerColor = Color.White,
-                focusedIndicatorColor = Color.Transparent,
-                unfocusedIndicatorColor = Color.Transparent
-            ),
-            shape = RoundedCornerShape(4.dp)
-        )
-
+fun getQuantityByName(warehouse: Warehouse, name: String): Int {
+    return when (name) {
+        warehouse.item1.name -> warehouse.item1.quantity
+        warehouse.item2.name -> warehouse.item2.quantity
+        warehouse.item3.name -> warehouse.item3.quantity
+        warehouse.item4.name -> warehouse.item4.quantity
+        warehouse.item5.name -> warehouse.item5.quantity
+        warehouse.item6.name -> warehouse.item6.quantity
+        warehouse.item7.name -> warehouse.item7.quantity
+        else -> 0
     }
 }
