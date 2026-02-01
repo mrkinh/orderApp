@@ -2,6 +2,8 @@ package com.homemade.ordapp.utils
 
 import android.os.Build
 import androidx.annotation.RequiresApi
+import androidx.compose.ui.graphics.Color
+import com.homemade.ordapp.data.room.entities.OrderItem
 import java.time.Instant
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
@@ -105,4 +107,34 @@ fun getOrderStatusName(status: String): String {
         ORDER_STATUS_CANCELED -> "Đã Hủy"
         else ->  "Chưa xác nhận"
     }
+}
+
+fun getOrderStatusColor(status: String): Color {
+    return when (status) {
+        ORDER_STATUS_UNKNOWN -> Color(0xFF51AF58)
+        ORDER_STATUS_ORDERED -> Color(0xFFFF0000)
+        ORDER_STATUS_DELIVERED -> Color(0xFF51AF58)
+        ORDER_STATUS_CANCELED -> Color(0xFFE4CA8A)
+        else ->  Color(0xFF51AF58)
+    }
+}
+
+fun getOrderStatusBGColor(status: String): Color {
+    return when (status) {
+        ORDER_STATUS_UNKNOWN -> Color(0x4C51AF58)
+        ORDER_STATUS_ORDERED -> Color(0x4CFF0000)
+        ORDER_STATUS_DELIVERED -> Color(0x4C51AF58)
+        ORDER_STATUS_CANCELED -> Color(0x4CE4CA8A)
+        else ->  Color(0x4C51AF58)
+    }
+}
+
+fun getTotalPrice(items: List<OrderItem>): Int {
+    val totalCakeLarge = items.filter { it.itemName == ITEM_CHUNG_CAKE_LARGE }.sumOf { it.quantity }
+    val totalCakeNormal = items.filter { it.itemName == ITEM_CHUNG_CAKE_NORMAL }.sumOf { it.quantity }
+    val totalCakeSmall = items.filter { it.itemName == ITEM_CHUNG_CAKE_SMALL }.sumOf { it.quantity }
+    val totalSausageLarge= items.filter { it.itemName == ITEM_PORK_SAUSAGE_LARGE }.sumOf { it.quantity }
+    val totalSausage = items.filter { it.itemName == ITEM_PORK_SAUSAGE }.sumOf { it.quantity }
+    val totalSausageFry = items.filter { it.itemName == ITEM_PORK_SAUSAGE_FRY }.sumOf { it.quantity }
+    return (totalCakeLarge * 120) + (totalCakeNormal * 70) + (totalCakeSmall * 50) + (totalSausageLarge * 180) + (totalSausage * 90) + (totalSausageFry * 180)
 }

@@ -7,6 +7,7 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
@@ -49,6 +50,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
@@ -72,9 +74,12 @@ import com.homemade.ordapp.utils.ORDER_STATUS_CANCELED
 import com.homemade.ordapp.utils.ORDER_STATUS_DELIVERED
 import com.homemade.ordapp.utils.ORDER_STATUS_ORDERED
 import com.homemade.ordapp.utils.getMoonDate
+import com.homemade.ordapp.utils.getOrderStatusBGColor
+import com.homemade.ordapp.utils.getOrderStatusColor
 import com.homemade.ordapp.utils.getOrderStatusName
 import com.homemade.ordapp.utils.getQuantityTypeName
 import com.homemade.ordapp.utils.getReadableItemName
+import com.homemade.ordapp.utils.getTotalPrice
 
 @RequiresApi(Build.VERSION_CODES.O)
 @OptIn(ExperimentalMaterial3Api::class)
@@ -159,7 +164,7 @@ fun SearchContent(
             modifier = Modifier
                 .fillMaxWidth()
                 .height(55.dp)
-                .padding(start = 20.dp, end=20.dp, top = 5.dp)
+                .padding(start = 20.dp, end = 20.dp, top = 5.dp)
                 .border(width = 1.dp, color = Color(0x33C4C4C4), shape = RoundedCornerShape(4.dp))
                 .clip(RoundedCornerShape(4.dp))
                 .background(Color.White)
@@ -189,8 +194,8 @@ fun SearchContent(
         }
     }
     Row(modifier = Modifier
-            .fillMaxWidth()
-            .wrapContentHeight()
+        .fillMaxWidth()
+        .wrapContentHeight()
     ) {
         Row(
             modifier = Modifier.padding(start = 20.dp, top = 15.dp)
@@ -217,6 +222,7 @@ fun SearchContent(
             isExpanded = dateExpanded.value,
             dataList = viewModel.getSearchDateList(),
             onDismissRequest = { ->
+                dateExpanded.value = false
             }
         ) { selectedDate ->
             dateExpanded.value = false
@@ -396,6 +402,22 @@ fun ListContentData(
                             .background(Color(0x42C4C4C4))
                     )
                 }
+                Row(
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    modifier = Modifier.fillMaxSize()
+                        .padding(start = 20.dp, end = 20.dp, bottom = 10.dp)
+                ) {
+                    Text(
+                        text = "Ghi chú: ${item.order.description}",
+                        fontSize = 25.sp,
+                        textAlign = TextAlign.Left,
+                        lineHeight = 30.sp,
+                        color = Color.Black,
+                        overflow = TextOverflow.Visible,
+                        fontStyle = FontStyle.Italic,
+                        fontWeight = FontWeight.Normal
+                    )
+                }
 
                 // Action List
                 Row(
@@ -405,7 +427,7 @@ fun ListContentData(
                         .padding(start = 20.dp, end = 20.dp, top = 30.dp, bottom = 20.dp)
                 ) {
                     Text(
-                        text = "Tổng: 200K",
+                        text = "Tổng: ${getTotalPrice(item.items)}K",
                         fontSize = 25.sp,
                         textAlign = TextAlign.Left,
                         lineHeight = 30.sp,
@@ -419,7 +441,7 @@ fun ListContentData(
                         modifier = Modifier
                             .width(200.dp)
                             .wrapContentHeight()
-                            .background(Color(0x4251AF58))
+                            .background(getOrderStatusBGColor(item.order.status))
                             .border(width = 1.dp, color = Color(0x33C4C4C4), shape = RoundedCornerShape(4.dp))
                             .padding(top =10.dp, bottom = 10.dp, end=20.dp)
                             .clickable {
@@ -432,7 +454,7 @@ fun ListContentData(
                             textAlign = TextAlign.Center,
                             lineHeight = 30.sp,
                             maxLines = 1,
-                            color = Color(0xFF51AF58),
+                            color = getOrderStatusColor(item.order.status),
                             fontWeight = FontWeight.Bold,
                             overflow = TextOverflow.Ellipsis,
                         )
@@ -440,6 +462,7 @@ fun ListContentData(
                             isExpanded = statusListExpanded.value,
                             dataList = viewModel.getOrderStatusList(),
                             onDismissRequest = { ->
+                                statusListExpanded.value = false
                             }
                         ) { selectedIndex ->
                             statusListExpanded.value = false

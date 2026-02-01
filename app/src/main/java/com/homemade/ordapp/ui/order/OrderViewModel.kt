@@ -58,9 +58,16 @@ class OrderViewModel(
         _state.update { it.copy(refreshing = true) }
         viewModelScope.launch(Graph.ioDispatcher) {
             orderRepository.getByDate(getCurrentDate()).collect { orders ->
+                val sortedList = orders.map { orderWithItem ->
+                    orderWithItem.copy(
+                        items = orderWithItem.items.sortedBy { item ->
+                            sortOrderList.indexOf(item.itemName)
+                        }
+                    )
+                }
                 _state.update { it.copy(
-                    orderList = orders.toMutableList(),
-                    displayOrderList=orders.toMutableList(),
+                    orderList = sortedList.toMutableList(),
+                    displayOrderList=sortedList.toMutableList(),
                     searchStatus = SearchStatus(
                         date = getCurrentDate()
                     ),
@@ -71,6 +78,7 @@ class OrderViewModel(
     }
     fun getDateList(): MutableList<String> {
         return mutableListOf(
+            "10/02/2026",
             "11/02/2026",
             "12/02/2026",
             "13/02/2026",
@@ -83,6 +91,7 @@ class OrderViewModel(
 
     fun getSearchDateList(): MutableList<String> {
         return mutableListOf(
+            "10/02/2026",
             "11/02/2026",
             "12/02/2026",
             "13/02/2026",
@@ -198,10 +207,17 @@ class OrderViewModel(
         viewModelScope.launch(Graph.ioDispatcher) {
             if (date == "ALL") {
                 orderRepository.getAll().collect { orders ->
+                    val sortedList = orders.map { orderWithItem ->
+                        orderWithItem.copy(
+                            items = orderWithItem.items.sortedBy { item ->
+                                sortOrderList.indexOf(item.itemName)
+                            }
+                        )
+                    }
                     _state.update {
                         it.copy(
-                            orderList = orders.toMutableList(),
-                            displayOrderList = orders.toMutableList(),
+                            orderList = sortedList.toMutableList(),
+                            displayOrderList = sortedList.toMutableList(),
                             searchStatus = SearchStatus(
                                 date = date
                             ),
@@ -211,10 +227,17 @@ class OrderViewModel(
                 }
             } else {
                 orderRepository.getByDate(date).collect { orders ->
+                    val sortedList = orders.map { orderWithItem ->
+                        orderWithItem.copy(
+                            items = orderWithItem.items.sortedBy { item ->
+                                sortOrderList.indexOf(item.itemName)
+                            }
+                        )
+                    }
                     _state.update {
                         it.copy(
-                            orderList = orders.toMutableList(),
-                            displayOrderList = orders.toMutableList(),
+                            orderList = sortedList.toMutableList(),
+                            displayOrderList = sortedList.toMutableList(),
                             searchStatus = SearchStatus(
                                 date = date
                             ),

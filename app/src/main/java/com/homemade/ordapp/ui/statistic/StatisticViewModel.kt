@@ -12,6 +12,7 @@ import androidx.lifecycle.viewModelScope
 import com.homemade.ordapp.Graph
 import com.homemade.ordapp.data.repository.OrderRepository
 import com.homemade.ordapp.data.repository.WarehouseRepository
+import com.homemade.ordapp.data.room.entities.OrderItem
 import com.homemade.ordapp.data.room.model.OrderWithItem
 import com.homemade.ordapp.ui.home.HomeViewModel.HomeUIItem
 import com.homemade.ordapp.utils.*
@@ -34,6 +35,7 @@ class StatisticViewModel(
     }
     private val _state = MutableStateFlow(
         StatisticViewState(
+            totalPrice = "0K",
             orderList = mutableListOf(),
             statisticItem = mutableListOf()
         )
@@ -55,7 +57,12 @@ class StatisticViewModel(
         _state.update { it.copy(refreshing = true) }
         viewModelScope.launch(Graph.ioDispatcher) {
             orderRepository.getAll().collect { orders ->
-                _state.update { it.copy(orderList = orders, statisticItem = updateStatisticItems(orders)) }
+                val itemList = updateStatisticItems(orders)
+                _state.update { it.copy(
+                    totalPrice = getTotalPrice(itemList).toString(),
+                    orderList = orders,
+                    statisticItem = itemList)
+                }
             }
         }
     }
@@ -66,9 +73,10 @@ class StatisticViewModel(
         dates.forEach { date ->
             var item = StatisticItem(
                 date = date,
+                totalPrice = "",
                 items = createDefaultItemList()
             )
-            var orderedListOfDate = orders.filter { it.order.pickupTime == date }
+            var orderedListOfDate = orders.filter { it.order.pickupTime == date && it.order.status != ORDER_STATUS_CANCELED }
             val totalsMap = orderedListOfDate
                 .flatMap { it.items }
                 .groupBy { it.itemName }
@@ -79,7 +87,7 @@ class StatisticViewModel(
                     quantity = totalsMap[defaultItem.name] ?: 0
                 )
             }
-            item = item.copy( items = newDetailItem)
+            item = item.copy( items = newDetailItem, totalPrice = getTotalPriceOfDate(newDetailItem).toString())
             ret.add(item)
         }
         return ret
@@ -128,11 +136,13 @@ class StatisticViewModel(
                 row.createCell(4).setCellValue(safeDate)
 
                 val detailString = orderWithItem.items.joinToString(separator = "\n") { detail ->
-                    "${detail.itemName}: ${detail.quantity}"
+                    "${getReadableItemName(detail.itemName)}: ${detail.quantity}"
                 }
                 val detailCell = row.createCell(5)
                 detailCell.setCellValue(detailString)
                 detailCell.setCellStyle(wrapStyle)
+                val lineCount = orderWithItem.items.count()
+                row.height = (lineCount * 14 * 20).toShort()
             }
             sheet.setColumnWidth(5, 15000)
         }
@@ -153,8 +163,27 @@ class StatisticViewModel(
         workbook.close()
     }
 
+    fun getTotalPriceOfDate(items: List<StatisticItemDetail>): Int {
+        val totalCakeLarge = items.filter { it.name == ITEM_CHUNG_CAKE_LARGE }.sumOf { it.quantity }
+        val totalCakeNormal = items.filter { it.name == ITEM_CHUNG_CAKE_NORMAL }.sumOf { it.quantity }
+        val totalCakeSmall = items.filter { it.name == ITEM_CHUNG_CAKE_SMALL }.sumOf { it.quantity }
+        val totalSausageLarge= items.filter { it.name == ITEM_PORK_SAUSAGE_LARGE }.sumOf { it.quantity }
+        val totalSausage = items.filter { it.name == ITEM_PORK_SAUSAGE }.sumOf { it.quantity }
+        val totalSausageFry = items.filter { it.name == ITEM_PORK_SAUSAGE_FRY }.sumOf { it.quantity }
+        return (totalCakeLarge * 120) + (totalCakeNormal * 70) + (totalCakeSmall * 50) + (totalSausageLarge * 180) + (totalSausage * 90) + (totalSausageFry * 180)
+    }
+
+    fun getTotalPrice(items: List<StatisticItem>): Int {
+        var totalPrice = 0
+        items.forEach { detail ->
+            totalPrice += getTotalPriceOfDate(detail.items)
+        }
+        return totalPrice
+    }
+
     fun getDateList(): MutableList<String> {
         return mutableListOf(
+            "10/02/2026",
             "11/02/2026",
             "12/02/2026",
             "13/02/2026",
@@ -167,6 +196,7 @@ class StatisticViewModel(
 
     data class StatisticItem(
         val date: String,
+        val totalPrice: String,
         val items: List<StatisticItemDetail>
     )
 
@@ -178,6 +208,7 @@ class StatisticViewModel(
     data class StatisticViewState(
         val orderList: List<OrderWithItem>,
         val statisticItem: List<StatisticItem>,
+        val totalPrice: String,
         val refreshing: Boolean = false,
     )
 }

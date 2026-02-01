@@ -91,9 +91,6 @@ fun CreateOrder(
 
     Scaffold(
         modifier = Modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
-        bottomBar = {
-            NavBar(navController, navigateToOther)
-        },
         containerColor = backgroundColor
     ) {  innerPadding ->
         LazyColumn(modifier = Modifier.padding(

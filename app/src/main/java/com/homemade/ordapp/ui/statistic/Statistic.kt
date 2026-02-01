@@ -89,7 +89,7 @@ fun Statistic(
             )
         ) {
             StatisticHeader( navigateToOther, viewModel)
-            StatisticContent(viewModel, statisticViewState.statisticItem) {
+            StatisticContent(viewModel, statisticViewState.statisticItem, statisticViewState.totalPrice) {
 
             }
         }
@@ -171,6 +171,7 @@ fun StatisticHeader(
 fun StatisticContent(
     viewModel: StatisticViewModel,
     data: List<StatisticViewModel.StatisticItem>,
+    totalPrice: String,
     onEditOrder: () -> Unit
 ) {
     LazyColumn(
@@ -415,7 +416,57 @@ fun StatisticContent(
                         )
                     }
                     Spacer(modifier = Modifier.height(15.dp))
+                    Row(
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier = Modifier
+                            .padding(start = 20.dp, end = 20.dp, top = 20.dp)
+                            .fillMaxWidth()
+                            .wrapContentHeight()
+                    ) {
+                        Text(
+                            text = "Tổng Tiền",
+                            fontSize = 20.sp,
+                            lineHeight = 30.sp,
+                            fontStyle = FontStyle.Normal,
+                            fontWeight = FontWeight.Normal,
+                            color = Color.Black,
+                            modifier = Modifier.padding(start = 30.dp)
+                        )
+
+                        Text(
+                            text = "${item.totalPrice}K",
+                            fontSize = 20.sp,
+                            lineHeight = 30.sp,
+                            fontStyle = FontStyle.Normal,
+                            fontWeight = FontWeight.Normal,
+                            color = Color.Black,
+                            modifier = Modifier.padding(start = 30.dp)
+                        )
+                    }
                 }
+            }
+        }
+        item {
+            Row(
+                horizontalArrangement = Arrangement.Center,
+                verticalAlignment = Alignment.CenterVertically,
+                modifier = Modifier
+                    .padding(start = 20.dp, end = 20.dp, top = 20.dp)
+                    .fillMaxWidth()
+                    .wrapContentHeight()
+            ) {
+                Text(
+                    text = "Tổng Tiền: ${totalPrice}K",
+                    fontSize = 25.sp,
+                    lineHeight = 30.sp,
+                    fontStyle = FontStyle.Normal,
+                    fontWeight = FontWeight.Bold,
+                    color = Color(0xFFFF0000),
+                    textAlign = TextAlign.Center,
+                    modifier = Modifier.fillMaxWidth(0.5F)
+                        .background(Color(0x4CFF0000))
+                )
             }
         }
     }

@@ -39,7 +39,7 @@ interface OrderDAO  {
     suspend fun getOrderById(orderId: Long): OrderWithItem
 
     @Transaction
-    @Query("SELECT * FROM orders WHERE pickupTime = :date")
+    @Query("SELECT * FROM orders WHERE pickupTime = :date ORDER BY orderTime DESC")
     fun getOrderByDate(date: String): Flow<List<OrderWithItem>>
 
     @Transaction
