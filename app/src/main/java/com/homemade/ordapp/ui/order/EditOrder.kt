@@ -82,7 +82,7 @@ import com.homemade.ordapp.utils.getMoonDate
 @RequiresApi(Build.VERSION_CODES.O)
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun CreateOrder(
+fun EditOrder(
     navController: NavHostController,
     navigateToOther: (String) -> Unit,
     viewModel: OrderViewModel = Graph.orderVM,
@@ -100,7 +100,7 @@ fun CreateOrder(
             bottom = innerPadding.calculateBottomPadding(),
         )) {
             item {
-                Content(navigateToOther, viewModel)
+                EditContent(navigateToOther, viewModel)
             }
         }
     }
@@ -109,7 +109,7 @@ fun CreateOrder(
 
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
-fun Content(
+fun EditContent(
     navigateToOther: (String) -> Unit,
     viewModel: OrderViewModel
 ) {
@@ -121,40 +121,40 @@ fun Content(
         verticalArrangement = Arrangement.spacedBy(10.dp),
         horizontalAlignment = Alignment.Start
     ) {
-        Header( true, "Nhận Đơn") {
+        Header( true, "Chỉnh Sửa Đơn") {
             navigateToOther("home")
         }
-        NewOrderContent (viewModel, orderViewState.creatingOrder) { ->
+        EditDetailContent (viewModel, orderViewState.editingFullOrder) { ->
             notificationText.value = ""
             openConfirmDialog.value = true
         }
         ConfirmDialog(openDialog = openConfirmDialog.value,
-            title = "Nhận Đơn",
+            title = "Chỉnh Sửa Đơn",
             onDismissRequest= {
                 openConfirmDialog.value = false
             },
             onConfirmRequest = {
-                if (!viewModel.isCreatingOrderValid()) {
+                if (!viewModel.isEditingOrderValid()) {
                     notificationText.value = "Thông tin khách hàng không đầy đủ"
                 } else {
-                    viewModel.addNewOder()
+                    viewModel.updateFullOrder()
                     openConfirmDialog.value = false
                     notificationText.value = ""
                     navigateToOther("Home")
                 }
             }
         ) {
-            OrderConfirmContent(notificationText.value,orderViewState.creatingOrder)
+            EditOrderConfirmContent(notificationText.value,orderViewState.editingFullOrder)
         }
     }
 }
 @RequiresApi(Build.VERSION_CODES.O)
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun NewOrderContent(
+fun EditDetailContent(
     viewModel: OrderViewModel,
-    creatingOrder: OrderWithItem,
-    onNewOrder: () -> Unit
+    editingOrder: OrderWithItem,
+    onUpdateOrder: () -> Unit
 ) {
     val keyboardController = LocalSoftwareKeyboardController.current
     val focusRequester = remember { FocusRequester() }
@@ -190,7 +190,7 @@ fun NewOrderContent(
                 color = Color.Black,
                 overflow = TextOverflow.Ellipsis,
 
-            )
+                )
             Text(
                 text = "(*)",
                 fontSize = 25.sp,
@@ -202,10 +202,10 @@ fun NewOrderContent(
             )
         }
         BasicTextField(
-            value = creatingOrder.order.customerName,
+            value = editingOrder.order.customerName,
             onValueChange = {
-                val order = creatingOrder.order.copy(customerName = it)
-                viewModel.updateOrderInfo(order)
+                val order = editingOrder.order.copy(customerName = it)
+                viewModel.updateFullEditingOrderInfo(order)
             },
             textStyle = TextStyle(fontSize = 25.sp, color = Color.Black),
             singleLine = true,
@@ -226,7 +226,7 @@ fun NewOrderContent(
                 .focusRequester(focusRequester),
         ) { innerTextField ->
             TextFieldDefaults.DecorationBox(
-                value = creatingOrder.order.customerName,
+                value = editingOrder.order.customerName,
                 innerTextField = {
                     innerTextField()
                 },
@@ -273,10 +273,10 @@ fun NewOrderContent(
             )
         }
         BasicTextField(
-            value = creatingOrder.order.customerPhone,
+            value = editingOrder.order.customerPhone,
             onValueChange = {
-                val order = creatingOrder.order.copy(customerPhone = it)
-                viewModel.updateOrderInfo(order)
+                val order = editingOrder.order.copy(customerPhone = it)
+                viewModel.updateFullEditingOrderInfo(order)
             },
             textStyle = TextStyle(fontSize = 25.sp, color = Color.Black),
             singleLine = true,
@@ -297,7 +297,7 @@ fun NewOrderContent(
                 .focusRequester(focusRequester),
         ) { innerTextField ->
             TextFieldDefaults.DecorationBox(
-                value = creatingOrder.order.customerPhone,
+                value = editingOrder.order.customerPhone,
                 innerTextField = {
                     innerTextField()
                 },
@@ -354,7 +354,7 @@ fun NewOrderContent(
                 }
         ) {
             Text(
-                text = creatingOrder.order.pickupTime + "-" + getMoonDate(creatingOrder.order.pickupTime) + "AL",
+                text = editingOrder.order.pickupTime + "-" + getMoonDate(editingOrder.order.pickupTime) + "AL",
                 fontSize = 25.sp,
                 textAlign = TextAlign.Left,
                 lineHeight = 30.sp,
@@ -364,7 +364,7 @@ fun NewOrderContent(
                 modifier = Modifier.padding(top = 10.dp, bottom = 10.dp)
             )
         }
-        DateList(
+        EditDateList(
             isExpanded = pickupDateExpanded.value,
             dataList = viewModel.getDateList(),
             onDismissRequest = { ->
@@ -372,8 +372,8 @@ fun NewOrderContent(
         ) { selectedDate ->
             pickupDateExpanded.value = false
             var pickupDate = viewModel.getDateList()[selectedDate]
-            val order = creatingOrder.order.copy(pickupTime = pickupDate)
-            viewModel.updateOrderInfo(order)
+            val order = editingOrder.order.copy(pickupTime = pickupDate)
+            viewModel.updateFullEditingOrderInfo(order)
         }
 
         // Deposit area
@@ -401,10 +401,10 @@ fun NewOrderContent(
             )
         }
         BasicTextField(
-            value = creatingOrder.order.depositMoney,
+            value = editingOrder.order.depositMoney,
             onValueChange = {
-                val order = creatingOrder.order.copy(depositMoney = it)
-                viewModel.updateOrderInfo(order)
+                val order = editingOrder.order.copy(depositMoney = it)
+                viewModel.updateFullEditingOrderInfo(order)
             },
             textStyle = TextStyle(fontSize = 25.sp, color = Color.Black),
             singleLine = true,
@@ -425,7 +425,7 @@ fun NewOrderContent(
                 .focusRequester(focusRequester),
         ) { innerTextField ->
             TextFieldDefaults.DecorationBox(
-                value = creatingOrder.order.depositMoney,
+                value = editingOrder.order.depositMoney,
                 innerTextField = {
                     innerTextField()
                 },
@@ -461,7 +461,7 @@ fun NewOrderContent(
     )
 
     // Detail Order
-    DetailOrder(viewModel, creatingOrder)
+    EditDetailOrder(viewModel, editingOrder)
 
     // Note
     Text(
@@ -476,10 +476,10 @@ fun NewOrderContent(
         modifier = Modifier.padding(start = 50.dp, top= 5.dp)
     )
     BasicTextField(
-        value = creatingOrder.order.description,
+        value = editingOrder.order.description,
         onValueChange = {
-            val order = creatingOrder.order.copy(description = it)
-            viewModel.updateOrderInfo(order)
+            val order = editingOrder.order.copy(description = it)
+            viewModel.updateFullEditingOrderInfo(order)
         },
         minLines = 3,
         maxLines = 10,
@@ -501,7 +501,7 @@ fun NewOrderContent(
             .focusRequester(focusRequester),
     ) { innerTextField ->
         TextFieldDefaults.DecorationBox(
-            value = creatingOrder.order.description,
+            value = editingOrder.order.description,
             innerTextField = {
                 innerTextField()
             },
@@ -535,7 +535,7 @@ fun NewOrderContent(
                 .width(200.dp)
                 .height(70.dp)
                 .clickable(onClick = {
-                    onNewOrder()
+                    onUpdateOrder()
                 })
         ) {
             Text(
@@ -548,7 +548,7 @@ fun NewOrderContent(
 }
 
 @Composable
-fun DateList(
+fun EditDateList(
     isExpanded: Boolean,
     dataList: List<String>,
     onDismissRequest: () -> Unit,
@@ -596,9 +596,9 @@ fun DateList(
 @RequiresApi(Build.VERSION_CODES.O)
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun DetailOrder(
+fun EditDetailOrder(
     viewModel: OrderViewModel,
-    creatingOrder: OrderWithItem,
+    editingOrder: OrderWithItem,
 ) {
     val keyboardController = LocalSoftwareKeyboardController.current
     val focusRequester = remember { FocusRequester() }
@@ -628,11 +628,11 @@ fun DetailOrder(
             )
 
             BasicTextField(
-                value = getQuantityByItemName(creatingOrder,ITEM_PORK_SAUSAGE_LARGE),
+                value = getQuantityByItemName(editingOrder,ITEM_PORK_SAUSAGE_LARGE),
                 onValueChange = {
                     val quantity = it.toIntOrNull() ?: 0
                     var orderItem = OrderItem (itemName = ITEM_PORK_SAUSAGE_LARGE, quantity = quantity)
-                    viewModel.addOrUpdateItem(orderItem)
+                    viewModel.addOrUpdateEditingItem(orderItem)
                 },
                 textStyle = TextStyle(fontSize = 25.sp, color = Color.Black),
                 singleLine = true,
@@ -656,7 +656,7 @@ fun DetailOrder(
                     .focusRequester(focusRequester),
             ) { innerTextField ->
                 TextFieldDefaults.DecorationBox(
-                    value = getQuantityByItemName(creatingOrder,ITEM_PORK_SAUSAGE_LARGE),
+                    value = getQuantityByItemName(editingOrder,ITEM_PORK_SAUSAGE_LARGE),
                     innerTextField = {
                         innerTextField()
                     },
@@ -709,11 +709,11 @@ fun DetailOrder(
             )
 
             BasicTextField(
-                value = getQuantityByItemName(creatingOrder,ITEM_PORK_SAUSAGE),
+                value = getQuantityByItemName(editingOrder,ITEM_PORK_SAUSAGE),
                 onValueChange = {
                     val quantity = it.toIntOrNull() ?: 0
                     var orderItem = OrderItem (itemName = ITEM_PORK_SAUSAGE, quantity = quantity)
-                    viewModel.addOrUpdateItem(orderItem)
+                    viewModel.addOrUpdateEditingItem(orderItem)
                 },
                 textStyle = TextStyle(fontSize = 25.sp, color = Color.Black),
                 singleLine = true,
@@ -737,7 +737,7 @@ fun DetailOrder(
                     .focusRequester(focusRequester),
             ) { innerTextField ->
                 TextFieldDefaults.DecorationBox(
-                    value = getQuantityByItemName(creatingOrder,ITEM_PORK_SAUSAGE),
+                    value = getQuantityByItemName(editingOrder,ITEM_PORK_SAUSAGE),
                     innerTextField = {
                         innerTextField()
                     },
@@ -790,11 +790,11 @@ fun DetailOrder(
             )
 
             BasicTextField(
-                value = getQuantityByItemName(creatingOrder,ITEM_PORK_SAUSAGE_FRY),
+                value = getQuantityByItemName(editingOrder,ITEM_PORK_SAUSAGE_FRY),
                 onValueChange = {
                     val quantity = it.toIntOrNull() ?: 0
                     var orderItem = OrderItem (itemName = ITEM_PORK_SAUSAGE_FRY, quantity = quantity)
-                    viewModel.addOrUpdateItem(orderItem)
+                    viewModel.addOrUpdateEditingItem(orderItem)
                 },
                 textStyle = TextStyle(fontSize = 25.sp, color = Color.Black),
                 singleLine = true,
@@ -818,7 +818,7 @@ fun DetailOrder(
                     .focusRequester(focusRequester),
             ) { innerTextField ->
                 TextFieldDefaults.DecorationBox(
-                    value = getQuantityByItemName(creatingOrder,ITEM_PORK_SAUSAGE_FRY),
+                    value = getQuantityByItemName(editingOrder,ITEM_PORK_SAUSAGE_FRY),
                     innerTextField = {
                         innerTextField()
                     },
@@ -871,11 +871,11 @@ fun DetailOrder(
             )
 
             BasicTextField(
-                value = getQuantityByItemName(creatingOrder,ITEM_CHUNG_CAKE_LARGE),
+                value = getQuantityByItemName(editingOrder,ITEM_CHUNG_CAKE_LARGE),
                 onValueChange = {
                     val quantity = it.toIntOrNull() ?: 0
                     var orderItem = OrderItem (itemName = ITEM_CHUNG_CAKE_LARGE, quantity = quantity)
-                    viewModel.addOrUpdateItem(orderItem)
+                    viewModel.addOrUpdateEditingItem(orderItem)
                 },
                 textStyle = TextStyle(fontSize = 25.sp, color = Color.Black),
                 singleLine = true,
@@ -899,7 +899,7 @@ fun DetailOrder(
                     .focusRequester(focusRequester),
             ) { innerTextField ->
                 TextFieldDefaults.DecorationBox(
-                    value = getQuantityByItemName(creatingOrder,ITEM_CHUNG_CAKE_LARGE),
+                    value = getQuantityByItemName(editingOrder,ITEM_CHUNG_CAKE_LARGE),
                     innerTextField = {
                         innerTextField()
                     },
@@ -951,11 +951,11 @@ fun DetailOrder(
                     .padding(start = 50.dp)
             )
             BasicTextField(
-                value = getQuantityByItemName(creatingOrder,ITEM_CHUNG_CAKE_NORMAL),
+                value = getQuantityByItemName(editingOrder,ITEM_CHUNG_CAKE_NORMAL),
                 onValueChange = {
                     val quantity = it.toIntOrNull() ?: 0
                     var orderItem = OrderItem (itemName = ITEM_CHUNG_CAKE_NORMAL, quantity = quantity)
-                    viewModel.addOrUpdateItem(orderItem)
+                    viewModel.addOrUpdateEditingItem(orderItem)
                 },
                 textStyle = TextStyle(fontSize = 25.sp, color = Color.Black),
                 singleLine = true,
@@ -979,7 +979,7 @@ fun DetailOrder(
                     .focusRequester(focusRequester),
             ) { innerTextField ->
                 TextFieldDefaults.DecorationBox(
-                    value = getQuantityByItemName(creatingOrder,ITEM_CHUNG_CAKE_LARGE),
+                    value = getQuantityByItemName(editingOrder,ITEM_CHUNG_CAKE_LARGE),
                     innerTextField = {
                         innerTextField()
                     },
@@ -1032,11 +1032,11 @@ fun DetailOrder(
             )
 
             BasicTextField(
-                value = getQuantityByItemName(creatingOrder,ITEM_CHUNG_CAKE_SMALL),
+                value = getQuantityByItemName(editingOrder,ITEM_CHUNG_CAKE_SMALL),
                 onValueChange = {
                     val quantity = it.toIntOrNull() ?: 0
                     var orderItem = OrderItem (itemName = ITEM_CHUNG_CAKE_SMALL, quantity = quantity)
-                    viewModel.addOrUpdateItem(orderItem)
+                    viewModel.addOrUpdateEditingItem(orderItem)
                 },
                 textStyle = TextStyle(fontSize = 25.sp, color = Color.Black),
                 singleLine = true,
@@ -1060,7 +1060,7 @@ fun DetailOrder(
                     .focusRequester(focusRequester),
             ) { innerTextField ->
                 TextFieldDefaults.DecorationBox(
-                    value = getQuantityByItemName(creatingOrder,ITEM_CHUNG_CAKE_SMALL),
+                    value = getQuantityByItemName(editingOrder,ITEM_CHUNG_CAKE_SMALL),
                     innerTextField = {
                         innerTextField()
                     },
@@ -1098,7 +1098,7 @@ fun DetailOrder(
 @RequiresApi(Build.VERSION_CODES.O)
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun OrderConfirmContent(
+fun EditOrderConfirmContent(
     errorMessage: String,
     data: OrderWithItem,
 ) {
@@ -1264,13 +1264,4 @@ fun OrderConfirmContent(
             }
         }
     }
-}
-fun getQuantityByItemName(order: OrderWithItem, itemName: String): String {
-    val itemsList = order.items
-    itemsList.map { item ->
-        if (item.itemName == itemName) {
-            return item.quantity.toString()
-        }
-    }
-    return "0"
 }

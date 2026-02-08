@@ -112,7 +112,7 @@ fun OrderList(
                 navigateToOther("home")
             }
             SearchContent(viewModel, orderViewState.searchStatus)
-            ListContentData(viewModel, orderViewState.displayOrderList) {
+            ListContentData(viewModel, orderViewState.displayOrderList, navigateToOther) {
                 openConfirmDialog.value = true
             }
             ConfirmDialog(openDialog = openConfirmDialog.value,
@@ -306,6 +306,7 @@ fun SearchContent(
 fun ListContentData(
     viewModel: OrderViewModel,
     data: List<OrderWithItem>,
+    navigateToOther: (String) -> Unit,
     onEditOrder: () -> Unit
 ) {
     LazyColumn (
@@ -436,6 +437,25 @@ fun ListContentData(
                         overflow = TextOverflow.Ellipsis,
                         fontWeight = FontWeight.Bold
                     )
+                    Row(
+                        horizontalArrangement = Arrangement.Center,
+                        modifier = Modifier
+                            .width(200.dp)
+                            .wrapContentHeight()
+                            .background(Color(0x199747FF))
+                            .border(width = 1.dp, color = Color(0xFF9747FF), shape = RoundedCornerShape(4.dp))
+                            .padding(top =10.dp, bottom = 10.dp, end=20.dp)
+                            .clickable {
+                                viewModel.setUpdatingFullOrder(item)
+                                navigateToOther("UpdateOrder")
+                            }
+                    ) {
+                        Text(
+                            text = "Sửa Đơn",
+                            fontSize = 25.sp,
+                            color = Color(0xFF9747FF),
+                        )
+                    }
                     Row(
                         horizontalArrangement = Arrangement.Center,
                         modifier = Modifier

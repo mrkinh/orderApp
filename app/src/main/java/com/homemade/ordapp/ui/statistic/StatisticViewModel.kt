@@ -121,11 +121,13 @@ class StatisticViewModel(
             val sheet = workbook.createSheet(dateLabelFinal)
 
             val headerRow = sheet.createRow(0)
-            val columns = listOf("Name", "Phone", "Deposit", "Description", "Detail", "PickupDate")
+            val columns = listOf("Ten", "SDT", "Coc", "Ghi Chu", "Ngay Lay", "Chi Tiet", )
             columns.forEachIndexed { index, title -> headerRow.createCell(index).setCellValue(title) }
 
             var rowIdx = 1
-            ordersInGroup.forEach { orderWithItem ->
+            ordersInGroup
+                .filter { it.order.status != ORDER_STATUS_CANCELED }
+                .forEach { orderWithItem ->
                 val row = sheet.createRow(rowIdx++)
 
                 val safeDate = orderWithItem.order.pickupTime.replace("/", "-")
@@ -170,7 +172,7 @@ class StatisticViewModel(
         val totalSausageLarge= items.filter { it.name == ITEM_PORK_SAUSAGE_LARGE }.sumOf { it.quantity }
         val totalSausage = items.filter { it.name == ITEM_PORK_SAUSAGE }.sumOf { it.quantity }
         val totalSausageFry = items.filter { it.name == ITEM_PORK_SAUSAGE_FRY }.sumOf { it.quantity }
-        return (totalCakeLarge * 120) + (totalCakeNormal * 70) + (totalCakeSmall * 50) + (totalSausageLarge * 180) + (totalSausage * 90) + (totalSausageFry * 180)
+        return (totalCakeLarge * 120) + (totalCakeNormal * 70) + (totalCakeSmall * 50) + (totalSausageLarge * 180) + (totalSausage * 90) + (totalSausageFry * 90)
     }
 
     fun getTotalPrice(items: List<StatisticItem>): Int {

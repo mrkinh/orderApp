@@ -85,7 +85,7 @@ fun getReadableItemName(itemName: String): String {
     return when(itemName) {
         ITEM_PORK_SAUSAGE_LARGE -> "Giò (1Kg)"
         ITEM_PORK_SAUSAGE -> "Giò (0.5Kg)"
-        ITEM_PORK_SAUSAGE_FRY -> "Chả Chiên"
+        ITEM_PORK_SAUSAGE_FRY -> "Chả Chiên (0.5kg)"
         ITEM_CHUNG_CAKE_LARGE -> "Bánh Chưng (To)"
         ITEM_CHUNG_CAKE_NORMAL -> "Bánh Chưng (Vừa)"
         ITEM_CHUNG_CAKE_SMALL -> "Bánh Chưng (Nhỏ)"
@@ -94,7 +94,7 @@ fun getReadableItemName(itemName: String): String {
 }
 fun getQuantityTypeName(itemName: String): String {
     return when(itemName) {
-        ITEM_PORK_SAUSAGE_FRY -> "Kg"
+        ITEM_PORK_SAUSAGE_FRY -> "Cái"
         else -> "Cái"
     }
 }
@@ -136,5 +136,5 @@ fun getTotalPrice(items: List<OrderItem>): Int {
     val totalSausageLarge= items.filter { it.itemName == ITEM_PORK_SAUSAGE_LARGE }.sumOf { it.quantity }
     val totalSausage = items.filter { it.itemName == ITEM_PORK_SAUSAGE }.sumOf { it.quantity }
     val totalSausageFry = items.filter { it.itemName == ITEM_PORK_SAUSAGE_FRY }.sumOf { it.quantity }
-    return (totalCakeLarge * 120) + (totalCakeNormal * 70) + (totalCakeSmall * 50) + (totalSausageLarge * 180) + (totalSausage * 90) + (totalSausageFry * 180)
+    return (totalCakeLarge * 120) + (totalCakeNormal * 70) + (totalCakeSmall * 50) + (totalSausageLarge * 180) + (totalSausage * 90) + (totalSausageFry * 90)
 }

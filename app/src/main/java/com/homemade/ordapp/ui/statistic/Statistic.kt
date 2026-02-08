@@ -328,7 +328,7 @@ fun StatisticContent(
                             .wrapContentHeight()
                     ) {
                         Text(
-                            text = "Lớn",
+                            text = "Lớn (1kg)",
                             fontSize = 20.sp,
                             lineHeight = 30.sp,
                             fontStyle = FontStyle.Normal,
@@ -356,7 +356,7 @@ fun StatisticContent(
                             .wrapContentHeight()
                     ) {
                         Text(
-                            text = "Nhỏ",
+                            text = "Nhỏ (0.5kg)",
                             fontSize = 20.sp,
                             lineHeight = 30.sp,
                             fontStyle = FontStyle.Normal,
@@ -396,7 +396,7 @@ fun StatisticContent(
                             .wrapContentHeight()
                     ) {
                         Text(
-                            text = "Số Lượng",
+                            text = "Số Lượng (0.5kg)",
                             fontSize = 20.sp,
                             lineHeight = 30.sp,
                             fontStyle = FontStyle.Normal,
@@ -406,7 +406,7 @@ fun StatisticContent(
                         )
 
                         Text(
-                            text = "${getQuantity(ITEM_PORK_SAUSAGE_FRY, item.items)} Kg",
+                            text = "${getQuantity(ITEM_PORK_SAUSAGE_FRY, item.items)} Cái",
                             fontSize = 20.sp,
                             lineHeight = 30.sp,
                             fontStyle = FontStyle.Normal,
@@ -452,7 +452,7 @@ fun StatisticContent(
                 horizontalArrangement = Arrangement.Center,
                 verticalAlignment = Alignment.CenterVertically,
                 modifier = Modifier
-                    .padding(start = 20.dp, end = 20.dp, top = 20.dp)
+                    .padding(start = 20.dp, end = 20.dp)
                     .fillMaxWidth()
                     .wrapContentHeight()
             ) {
@@ -468,6 +468,7 @@ fun StatisticContent(
                         .background(Color(0x4CFF0000))
                 )
             }
+            Spacer(modifier = Modifier.height(15.dp))
         }
     }
 }

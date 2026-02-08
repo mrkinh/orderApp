@@ -10,7 +10,7 @@ data class Order(
 
     val customerName: String = "",
     val customerPhone: String = "",
-    val pickupTime: String = "16/02/2026",
+    val pickupTime: String = "17/02/2026",
     val orderTime: Date = Date(),
     val depositMoney: String = "",
     val totalMoney: String = "",

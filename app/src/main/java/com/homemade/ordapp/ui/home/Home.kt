@@ -324,7 +324,7 @@ fun DataContent(
                     .wrapContentHeight()
             ) {
                 Text(
-                    text = "Lớn",
+                    text = "Lớn (1kg)",
                     fontSize = 20.sp,
                     lineHeight = 30.sp,
                     fontStyle = FontStyle.Normal,
@@ -352,7 +352,7 @@ fun DataContent(
                     .wrapContentHeight()
             ) {
                 Text(
-                    text = "Nhỏ",
+                    text = "Nhỏ (0.5kg)",
                     fontSize = 20.sp,
                     lineHeight = 30.sp,
                     fontStyle = FontStyle.Normal,
@@ -392,7 +392,7 @@ fun DataContent(
                     .wrapContentHeight()
             ) {
                 Text(
-                    text = "Số Lượng",
+                    text = "Số Lượng (0.5Kg)",
                     fontSize = 20.sp,
                     lineHeight = 30.sp,
                     fontStyle = FontStyle.Normal,
@@ -402,7 +402,7 @@ fun DataContent(
                 )
 
                 Text(
-                    text = "${getQuantity(ITEM_PORK_SAUSAGE_FRY, data)} Kg",
+                    text = "${getQuantity(ITEM_PORK_SAUSAGE_FRY, data)} cái",
                     fontSize = 20.sp,
                     lineHeight = 30.sp,
                     fontStyle = FontStyle.Normal,

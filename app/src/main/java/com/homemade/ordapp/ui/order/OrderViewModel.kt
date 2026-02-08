@@ -36,6 +36,10 @@ class OrderViewModel(
                 order = Order(),
                 items = emptyList()
             ),
+            editingFullOrder = OrderWithItem(
+                order = Order(),
+                items = emptyList()
+            ),
             searchStatus = SearchStatus(
                 date = getCurrentDate()
             )
@@ -170,6 +174,7 @@ class OrderViewModel(
         var newOrderFinal = currentState.editingOrder.copy( order = newOrder)
         _state.update { it.copy( editingOrder = newOrderFinal) }
     }
+
     fun updateOrder(): Int {
         if (_state.value.refreshing) return 1
 
@@ -182,6 +187,66 @@ class OrderViewModel(
             ), refreshing = false) }
         }
         return 0
+    }
+
+    fun setUpdatingFullOrder(newOrder: OrderWithItem) {
+        _state.update { it.copy( editingFullOrder = newOrder) }
+    }
+
+    fun updateFullEditingOrderInfo(newOrder: Order): Int {
+        if (_state.value.refreshing) return 1
+
+        _state.update { currentState ->
+            val currentOrder = currentState.editingFullOrder
+            currentState.copy(
+                editingFullOrder = currentOrder.copy(order = newOrder),
+                refreshing = false
+            )
+        }
+        return 0
+    }
+
+    fun updateFullOrder(): Int {
+        if (_state.value.refreshing) return 1
+
+        _state.update { it.copy(refreshing = true) }
+        viewModelScope.launch(Graph.ioDispatcher) {
+            orderRepository.updateFullOrder(_state.value.editingFullOrder.order, _state.value.editingFullOrder.items)
+            _state.update { it.copy(editingFullOrder = OrderWithItem(
+                order = Order(),
+                items = emptyList()
+            ), refreshing = false) }
+        }
+        return 0
+    }
+
+    fun addOrUpdateEditingItem(newItem: OrderItem) {
+        _state.update { currentState ->
+            val currentOrder = currentState.editingFullOrder
+            val itemsList = currentOrder.items
+
+            val itemExists = itemsList.any { it.itemName == newItem.itemName }
+            val updatedItems = if (itemExists) {
+                itemsList.map { item ->
+                    if (item.itemName == newItem.itemName) {
+                        item.copy(quantity = newItem.quantity)
+                    } else {
+                        item
+                    }
+                }
+            } else {
+                itemsList + newItem
+            }
+            val filteredItems = updatedItems.filter { it.quantity > 0 }
+            currentState.copy(
+                editingFullOrder = currentOrder.copy(items = filteredItems)
+            )
+        }
+    }
+    fun isEditingOrderValid(): Boolean {
+        if (_state.value.editingFullOrder.order.customerName.isEmpty()) return false
+        if (_state.value.editingFullOrder.order.customerPhone.isEmpty()) return false
+        return true
     }
 
     fun getOrderStatusList(): MutableList<Pair<String, String>> {
@@ -269,6 +334,7 @@ class OrderViewModel(
         val displayOrderList: MutableList<OrderWithItem>,
         val creatingOrder: OrderWithItem,
         val editingOrder: OrderWithItem,
+        val editingFullOrder: OrderWithItem,
         val searchStatus: SearchStatus,
         val refreshing: Boolean = false,
     )

@@ -434,7 +434,7 @@ fun Content(
                                     viewModel.updateCreatingItem(ITEM_PORK_SAUSAGE_FRY, quantity)
                                 }
                                 Text(
-                                    text = "Kg",
+                                    text = "Cái (0.5Kg)",
                                     fontSize = 18.sp,
                                     fontStyle = FontStyle.Normal,
                                     fontWeight = FontWeight.Normal,
